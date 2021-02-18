@@ -2,16 +2,18 @@ package api
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 
 	db "github.com/stanlee321/facebook-ads-server/db/sqlc"
+	pb "github.com/stanlee321/facebook-ads-server/pkg/api/v1"
 
 	"github.com/gin-gonic/gin"
 )
 
-type createFacebookAdRequest struct  {
-	AdID                      sql.NullInt64 `json:"ad_id" binding:"required"`
-	PageID                    sql.NullInt64   `json:"page_id" binding:"required"`
+type createFacebookAdRequest struct {
+	AdID                      sql.NullInt64  `json:"ad_id" binding:"required"`
+	PageID                    sql.NullInt64  `json:"page_id" binding:"required"`
 	PageName                  sql.NullString `json:"page_name" binding:"required"`
 	AdSnapshotURL             sql.NullString `json:"ad_snapshot_url"`
 	AdCreativeBody            sql.NullString `json:"ad_creative_body"`
@@ -32,35 +34,35 @@ type createFacebookAdRequest struct  {
 	SearchTerms               sql.NullString `json:"search_terms"`
 }
 
-func (server *Server ) createFacebookAd(ctx *gin.Context ){
+func (server *Server) createFacebookAd(ctx *gin.Context) {
 	var req createFacebookAdRequest
 
-	if err := ctx.ShouldBindJSON(&req ); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	args := db.CreateFacebookAdParams{
-		AdID: req.AdID,
-		PageID:  req.PageID,
-		PageName: req.PageName,
-		AdSnapshotUrl: req.AdSnapshotURL,
-		AdCreativeBody: req.AdCreativeBody,
-		AdCreativeLinkCaption: req.AdCreativeLinkCaption,
+		AdID:                      req.AdID,
+		PageID:                    req.PageID,
+		PageName:                  req.PageName,
+		AdSnapshotUrl:             req.AdSnapshotURL,
+		AdCreativeBody:            req.AdCreativeBody,
+		AdCreativeLinkCaption:     req.AdCreativeLinkCaption,
 		AdCreativeLinkDescription: req.AdCreativeLinkDescription,
-		AdCreativeLinkTitle: req.AdCreativeLinkTitle,
-		AdDeliveryStartTime: req.AdDeliveryStartTime,
-		AdDeliveryStopTime: req.AdDeliveryStopTime,
-		FundingEntity: req.FundingEntity,
-		ImpressionsMin: req.ImpressionsMin,
-		SpendMin: req.SpendMin,
-		SpendMax: req.SpendMax,
-		Currency: req.Currency,
-		AdUrl: req.AdURL,
-		SocialMediaFacebook: req.SocialMediaFacebook,
-		SocialMediaInstagram: req.SocialMediaInstagram,
-		SocialMediaWhatsapp: req.SocialMediaWhatsapp,
-		SearchTerms: req.SearchTerms,
+		AdCreativeLinkTitle:       req.AdCreativeLinkTitle,
+		AdDeliveryStartTime:       req.AdDeliveryStartTime,
+		AdDeliveryStopTime:        req.AdDeliveryStopTime,
+		FundingEntity:             req.FundingEntity,
+		ImpressionsMin:            req.ImpressionsMin,
+		SpendMin:                  req.SpendMin,
+		SpendMax:                  req.SpendMax,
+		Currency:                  req.Currency,
+		AdUrl:                     req.AdURL,
+		SocialMediaFacebook:       req.SocialMediaFacebook,
+		SocialMediaInstagram:      req.SocialMediaInstagram,
+		SocialMediaWhatsapp:       req.SocialMediaWhatsapp,
+		SearchTerms:               req.SearchTerms,
 	}
 
 	ad, err := server.store.CreateFacebookAd(ctx, args)
@@ -70,29 +72,26 @@ func (server *Server ) createFacebookAd(ctx *gin.Context ){
 		return
 	}
 
-	ctx.JSON(http.StatusOK, ad )
+	ctx.JSON(http.StatusOK, ad)
 }
-
 
 type getFacebookAdRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
-
-func (server *Server ) getFacebookAd(ctx *gin.Context ){
+func (server *Server) getFacebookAd(ctx *gin.Context) {
 	var req getFacebookAdRequest
 
-	if err := ctx.ShouldBindUri(&req ); err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	
 	ad, err := server.store.GetFacebookAd(ctx, req.ID)
 
 	if err != nil {
 
-		if err == sql.ErrNoRows{
+		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
@@ -100,30 +99,27 @@ func (server *Server ) getFacebookAd(ctx *gin.Context ){
 		return
 	}
 
-	ctx.JSON(http.StatusOK, ad )
+	ctx.JSON(http.StatusOK, ad)
 }
 
 type listFacebookAdByPageIDRequest struct {
 	PageLocation int32 `form:"page_location" binding:"required,min=1"`
-	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
-
+	PageSize     int32 `form:"page_size" binding:"required,min=5,max=10"`
 }
 
-
-func (server *Server ) listFacebookAds(ctx *gin.Context ){
+func (server *Server) listFacebookAds(ctx *gin.Context) {
 	var req listFacebookAdByPageIDRequest
 
-	if err := ctx.ShouldBindQuery(&req ); err != nil {
+	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	args := db.ListFacebookAdsParams{
 		Limit:  req.PageSize,
-		Offset: (req.PageLocation - 1)*req.PageSize,
+		Offset: (req.PageLocation - 1) * req.PageSize,
 	}
 
-	
 	ads, err := server.store.ListFacebookAds(ctx, args)
 
 	if err != nil {
@@ -132,33 +128,29 @@ func (server *Server ) listFacebookAds(ctx *gin.Context ){
 		return
 	}
 
-	ctx.JSON(http.StatusOK, ads )
+	ctx.JSON(http.StatusOK, ads)
 }
-
-
 
 type listFacebookAdsByPageIDRequest struct {
-	PageID int64 `form:"page_id" binding:"required"`
+	PageID       int64 `form:"page_id" binding:"required"`
 	PageLocation int32 `form:"page_location" binding:"required,min=1"`
-	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
+	PageSize     int32 `form:"page_size" binding:"required,min=5,max=10"`
 }
 
-
-func (server *Server ) listFacebookAdsByPageID(ctx *gin.Context ){
+func (server *Server) listFacebookAdsByPageID(ctx *gin.Context) {
 	var req listFacebookAdsByPageIDRequest
 
-	if err := ctx.ShouldBindQuery(&req ); err != nil {
+	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	args := db.ListFacebookAdsByPageIDParams{
-		PageID:  sql.NullInt64{Int64: req.PageID, Valid: true} ,
+		PageID: sql.NullInt64{Int64: req.PageID, Valid: true},
 		Limit:  req.PageSize,
-		Offset: (req.PageLocation - 1)*req.PageSize,
+		Offset: (req.PageLocation - 1) * req.PageSize,
 	}
 
-	
 	ads, err := server.store.ListFacebookAdsByPageID(ctx, args)
 
 	if err != nil {
@@ -167,29 +159,27 @@ func (server *Server ) listFacebookAdsByPageID(ctx *gin.Context ){
 		return
 	}
 
-	ctx.JSON(http.StatusOK, ads )
+	ctx.JSON(http.StatusOK, ads)
 }
-
 
 type listFacebookAdsByPageNameRequest struct {
-	PageName string `form:"page_name" binding:"required"`
-	PageLocation int32 `form:"page_location" binding:"required,min=1"`
-	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
+	PageName     string `form:"page_name" binding:"required"`
+	PageLocation int32  `form:"page_location" binding:"required,min=1"`
+	PageSize     int32  `form:"page_size" binding:"required,min=5,max=10"`
 }
 
-
-func (server *Server ) listFacebookAdsByPageName(ctx *gin.Context ){
+func (server *Server) listFacebookAdsByPageName(ctx *gin.Context) {
 	var req listFacebookAdsByPageNameRequest
 
-	if err := ctx.ShouldBindQuery(&req ); err != nil {
+	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	args := db.ListFacebookAdsByPageNameParams{
-		PageName:  sql.NullString{String: req.PageName, Valid: true} ,
-		Limit:  req.PageSize,
-		Offset: (req.PageLocation - 1)*req.PageSize,
+		PageName: sql.NullString{String: req.PageName, Valid: true},
+		Limit:    req.PageSize,
+		Offset:   (req.PageLocation - 1) * req.PageSize,
 	}
 
 	ads, err := server.store.ListFacebookAdsByPageName(ctx, args)
@@ -200,30 +190,28 @@ func (server *Server ) listFacebookAdsByPageName(ctx *gin.Context ){
 		return
 	}
 
-	ctx.JSON(http.StatusOK, ads )
+	ctx.JSON(http.StatusOK, ads)
 
 }
-
 
 type listFacebookAdsByAdIDRequest struct {
-	AdID int64 `form:"ad_id" binding:"required"`
+	AdID         int64 `form:"ad_id" binding:"required"`
 	PageLocation int32 `form:"page_location" binding:"required,min=1"`
-	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
+	PageSize     int32 `form:"page_size" binding:"required,min=5,max=10"`
 }
 
-
-func (server *Server ) listFacebookAdsByAdID(ctx *gin.Context ){
+func (server *Server) listFacebookAdsByAdID(ctx *gin.Context) {
 	var req listFacebookAdsByAdIDRequest
 
-	if err := ctx.ShouldBindQuery(&req ); err != nil {
+	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	args := db.ListFacebookAdsByAdIDParams{
-		AdID:  sql.NullInt64{Int64: req.AdID, Valid: true} ,
+		AdID:   sql.NullInt64{Int64: req.AdID, Valid: true},
 		Limit:  req.PageSize,
-		Offset: (req.PageLocation - 1)*req.PageSize,
+		Offset: (req.PageLocation - 1) * req.PageSize,
 	}
 
 	ads, err := server.store.ListFacebookAdsByAdID(ctx, args)
@@ -233,30 +221,26 @@ func (server *Server ) listFacebookAdsByAdID(ctx *gin.Context ){
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	ctx.JSON(http.StatusOK, ads )
+	ctx.JSON(http.StatusOK, ads)
 }
-
-
 
 type deleteFacebookAdRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
 }
 
-
-func (server *Server ) deleteFacebookAd(ctx *gin.Context ){
+func (server *Server) deleteFacebookAd(ctx *gin.Context) {
 	var req deleteFacebookAdRequest
 
-	if err := ctx.ShouldBindUri(&req ); err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	
 	err := server.store.DeleteFaceookAd(ctx, req.ID)
 
 	if err != nil {
 
-		if err == sql.ErrNoRows{
+		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
@@ -267,3 +251,32 @@ func (server *Server ) deleteFacebookAd(ctx *gin.Context ){
 	ctx.JSON(http.StatusOK, err)
 }
 
+type getSearchRequest struct {
+	Keyword string `json:"keyword" binding:"required"`
+}
+
+func (server *Server) getSearch(ctx *gin.Context) {
+	var req getSearchRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	ad, err := server.facebookClient.CreateFacebookAd(ctx, &pb.CreateFacebookAdRequest{
+		Keyword: req.Keyword,
+	})
+
+	if err != nil {
+		log.Print("ERROR FROM GRPC CALL", err)
+
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, ad)
+}

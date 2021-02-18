@@ -19,10 +19,10 @@ gen:
 	protoc --proto_path=proto proto/*.proto --go_out=plugins=grpc:pkg/api/v1 --grpc-gateway_out=:pkg/api/v1 --openapiv2_out=:openapiv2
 
 postgres:
-	docker run --name postgres12_alpine -p 5435:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:12-alpine
+	docker run --name postgres12_alpine -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:12-alpine
 
 createdb:
-	docker exec -it postgres12_alpine createdb --username=root --owner=root stats_db
+	docker exec -it postgres12_alpine createdb --username=root --owner=root facebook_db
 	
 dropdb:
 	docker exec -it postgres12_alpine dropdb stats_db
@@ -81,5 +81,7 @@ install:
 	echo $(shell ls)
 	# cp $(CONFIG_DIR)/$(CONFIG_FILE).json /etc/
 
+run:
+	go run main.go
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test  build run_dev_rest install cert
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test  build run_dev_rest install cert run
