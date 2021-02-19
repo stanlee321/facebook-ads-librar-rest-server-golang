@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"io"
 	"log"
 	"net/http"
 
@@ -252,7 +253,14 @@ func (server *Server) deleteFacebookAd(ctx *gin.Context) {
 }
 
 type getSearchRequest struct {
-	Keyword string `json:"keyword" binding:"required"`
+	SearchTerms        string `json:"search_terms" binding:"required"`
+	AccessToken        string `json:"access_token" binding:"required"`
+	PageTotal          int32  `json:"page_total" binding:"required,min=1,max=1000"`
+	SearchTotal        int32  `json:"search_total" binding:"required,min=1,max=5000"`
+	AdActiveStatus     string `json:"ad_active_status" binding:"required,oneof=ACTIVE INACTIVE ALL"`
+	AdDeliveryDateMax  string `json:"ad_delivery_date_max" binding:"required"`
+	AdDeliveryDateMin  string `json:"ad_delivery_date_min" binding:"required"`
+	AdReachedCountries string `json:"ad_reached_countries" binding:"required,oneof=BO MX"`
 }
 
 func (server *Server) getSearch(ctx *gin.Context) {
@@ -263,8 +271,15 @@ func (server *Server) getSearch(ctx *gin.Context) {
 		return
 	}
 
-	ad, err := server.facebookClient.CreateFacebookAd(ctx, &pb.CreateFacebookAdRequest{
-		Keyword: req.Keyword,
+	adStream, err := server.facebookClient.CreateFacebookAd(ctx, &pb.CreateFacebookAdRequest{
+		SearchTerms:        req.SearchTerms,
+		AccessToken:        req.AccessToken,
+		PageTotal:          req.PageTotal,
+		SearchTotal:        req.SearchTotal,
+		AdActiveStatus:     req.AdActiveStatus,
+		AdDeliveryDateMax:  req.AdDeliveryDateMax,
+		AdDeliveryDateMin:  req.AdDeliveryDateMin,
+		AdReachedCountries: req.AdReachedCountries,
 	})
 
 	if err != nil {
@@ -278,5 +293,30 @@ func (server *Server) getSearch(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, ad)
+	var adResults []*pb.FacebookAd
+
+	for {
+		ad, err := adStream.Recv()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Print("ERROR FROM GRPC CALL", err)
+
+			if err == sql.ErrNoRows {
+				ctx.JSON(http.StatusNotFound, errorResponse(err))
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+
+		// fmt.Print(ad)
+
+		adResults = append(adResults, ad.FacebookAd)
+	}
+
+	ctx.JSON(http.StatusOK, adResults)
 }
