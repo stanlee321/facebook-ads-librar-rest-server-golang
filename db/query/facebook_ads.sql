@@ -1,6 +1,7 @@
 -- name: CreateFacebookAd :one
 INSERT INTO "FacebookAd" (
   ad_id,
+  job_id,
   page_id,
   page_name,
   ad_snapshot_url,
@@ -12,6 +13,7 @@ INSERT INTO "FacebookAd" (
   ad_delivery_stop_time,
   funding_entity,
   impressions_min,
+  impressions_max,
   spend_min,
   spend_max,
   currency,
@@ -19,44 +21,44 @@ INSERT INTO "FacebookAd" (
   social_media_facebook,
   social_media_instagram,
   social_media_whatsapp,
-  search_terms
+  search_terms,
+  ad_creation_time,
+  potential_reach_max,
+  potential_reach_min
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25
 )
 RETURNING *;
 
 -- name: GetFacebookAd :one
 SELECT * FROM "FacebookAd"
-WHERE id = $1 LIMIT 1;
+WHERE ad_id = $1 LIMIT 1;
 
 
 -- name: ListFacebookAds :many
 SELECT * FROM "FacebookAd"
-ORDER BY id
 LIMIT $1
 OFFSET $2;
 
--- name: ListFacebookAdsByAdID :many
-SELECT * FROM "FacebookAd"
-WHERE ad_id = $1
-ORDER BY id
-LIMIT $2
-OFFSET $3;
 
 -- name: ListFacebookAdsByPageID :many
 SELECT * FROM "FacebookAd"
 WHERE page_id = $1
-ORDER BY id
 LIMIT $2
 OFFSET $3;
+
+-- name: ListFacebookAdsByJobID :many
+SELECT * FROM "FacebookAd"
+WHERE job_id = $1;
+
+
 
 -- name: ListFacebookAdsByPageName :many
 SELECT * FROM "FacebookAd"
 WHERE page_name = $1
-ORDER BY id
 LIMIT $2
 OFFSET $3;
 
 -- name: DeleteFaceookAd :exec
 DELETE FROM "FacebookAd"
-WHERE id = $1;
+WHERE ad_id = $1;

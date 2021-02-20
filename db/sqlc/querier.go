@@ -4,27 +4,37 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
 	CreateFacebookAd(ctx context.Context, arg CreateFacebookAdParams) (FacebookAd, error)
 	CreateFacebookDemo(ctx context.Context, arg CreateFacebookDemoParams) (FacebookDemo, error)
+	CreateFacebookJob(ctx context.Context, arg CreateFacebookJobParams) (FacebookJob, error)
 	CreateFacebookRegion(ctx context.Context, arg CreateFacebookRegionParams) (FacebookRegion, error)
-	DeleteFaceookAd(ctx context.Context, id int64) error
+	DeleteFaceookAd(ctx context.Context, adID int64) error
 	DeleteFaceookDemo(ctx context.Context, id int64) error
+	DeleteFaceookJob(ctx context.Context, id int64) error
 	DeleteFaceookRegion(ctx context.Context, id int64) error
-	GetFacebookAd(ctx context.Context, id int64) (FacebookAd, error)
+	GetFacebookAd(ctx context.Context, adID int64) (FacebookAd, error)
 	GetFacebookDemo(ctx context.Context, id int64) (FacebookDemo, error)
+	GetFacebookJob(ctx context.Context, id int64) (FacebookJob, error)
 	GetFacebookRegion(ctx context.Context, id int64) (FacebookRegion, error)
+	GetPastFacebookJob(ctx context.Context, arg GetPastFacebookJobParams) (FacebookJob, error)
 	ListFacebookAds(ctx context.Context, arg ListFacebookAdsParams) ([]FacebookAd, error)
-	ListFacebookAdsByAdID(ctx context.Context, arg ListFacebookAdsByAdIDParams) ([]FacebookAd, error)
+	ListFacebookAdsByJobID(ctx context.Context, jobID sql.NullInt64) ([]FacebookAd, error)
 	ListFacebookAdsByPageID(ctx context.Context, arg ListFacebookAdsByPageIDParams) ([]FacebookAd, error)
 	ListFacebookAdsByPageName(ctx context.Context, arg ListFacebookAdsByPageNameParams) ([]FacebookAd, error)
 	ListFacebookDemos(ctx context.Context, arg ListFacebookDemosParams) ([]FacebookDemo, error)
 	ListFacebookDemosByAdID(ctx context.Context, arg ListFacebookDemosByAdIDParams) ([]FacebookDemo, error)
+	ListFacebookDemosByJobID(ctx context.Context, arg ListFacebookDemosByJobIDParams) ([]FacebookDemo, error)
 	ListFacebookDemosByPageID(ctx context.Context, arg ListFacebookDemosByPageIDParams) ([]FacebookDemo, error)
+	ListFacebookJobs(ctx context.Context, arg ListFacebookJobsParams) ([]FacebookJob, error)
+	ListFacebookJobsBySearch(ctx context.Context, arg ListFacebookJobsBySearchParams) ([]FacebookJob, error)
+	ListFacebookJobsByToken(ctx context.Context, arg ListFacebookJobsByTokenParams) ([]FacebookJob, error)
 	ListFacebookRegions(ctx context.Context, arg ListFacebookRegionsParams) ([]FacebookRegion, error)
 	ListFacebookRegionsByAdID(ctx context.Context, arg ListFacebookRegionsByAdIDParams) ([]FacebookRegion, error)
+	ListFacebookRegionsByJobID(ctx context.Context, arg ListFacebookRegionsByJobIDParams) ([]FacebookRegion, error)
 	ListFacebookRegionsByPageID(ctx context.Context, arg ListFacebookRegionsByPageIDParams) ([]FacebookRegion, error)
 }
 

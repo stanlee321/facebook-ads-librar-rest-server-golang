@@ -2,79 +2,16 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
-
-	db "github.com/stanlee321/facebook-ads-server/db/sqlc"
-	pb "github.com/stanlee321/facebook-ads-server/pkg/api/v1"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	db "github.com/stanlee321/facebook-ads-server/db/sqlc"
+	pb "github.com/stanlee321/facebook-ads-server/pkg/api/v1"
 )
-
-type createFacebookAdRequest struct {
-	AdID                      sql.NullInt64  `json:"ad_id" binding:"required"`
-	PageID                    sql.NullInt64  `json:"page_id" binding:"required"`
-	PageName                  sql.NullString `json:"page_name" binding:"required"`
-	AdSnapshotURL             sql.NullString `json:"ad_snapshot_url"`
-	AdCreativeBody            sql.NullString `json:"ad_creative_body"`
-	AdCreativeLinkCaption     sql.NullString `json:"ad_creative_link_caption"`
-	AdCreativeLinkDescription sql.NullString `json:"ad_creative_link_description"`
-	AdCreativeLinkTitle       sql.NullString `json:"ad_creative_link_title"`
-	AdDeliveryStartTime       sql.NullString `json:"ad_delivery_start_time"`
-	AdDeliveryStopTime        sql.NullString `json:"ad_delivery_stop_time"`
-	FundingEntity             sql.NullString `json:"funding_entity"`
-	ImpressionsMin            sql.NullString `json:"impressions_min"`
-	SpendMin                  sql.NullInt64  `json:"spend_min"`
-	SpendMax                  sql.NullInt64  `json:"spend_max"`
-	Currency                  sql.NullString `json:"currency"`
-	AdURL                     sql.NullString `json:"ad_url"`
-	SocialMediaFacebook       sql.NullString `json:"social_media_facebook"`
-	SocialMediaInstagram      sql.NullString `json:"social_media_instagram"`
-	SocialMediaWhatsapp       sql.NullString `json:"social_media_whatsapp"`
-	SearchTerms               sql.NullString `json:"search_terms"`
-}
-
-func (server *Server) createFacebookAd(ctx *gin.Context) {
-	var req createFacebookAdRequest
-
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	args := db.CreateFacebookAdParams{
-		AdID:                      req.AdID,
-		PageID:                    req.PageID,
-		PageName:                  req.PageName,
-		AdSnapshotUrl:             req.AdSnapshotURL,
-		AdCreativeBody:            req.AdCreativeBody,
-		AdCreativeLinkCaption:     req.AdCreativeLinkCaption,
-		AdCreativeLinkDescription: req.AdCreativeLinkDescription,
-		AdCreativeLinkTitle:       req.AdCreativeLinkTitle,
-		AdDeliveryStartTime:       req.AdDeliveryStartTime,
-		AdDeliveryStopTime:        req.AdDeliveryStopTime,
-		FundingEntity:             req.FundingEntity,
-		ImpressionsMin:            req.ImpressionsMin,
-		SpendMin:                  req.SpendMin,
-		SpendMax:                  req.SpendMax,
-		Currency:                  req.Currency,
-		AdUrl:                     req.AdURL,
-		SocialMediaFacebook:       req.SocialMediaFacebook,
-		SocialMediaInstagram:      req.SocialMediaInstagram,
-		SocialMediaWhatsapp:       req.SocialMediaWhatsapp,
-		SearchTerms:               req.SearchTerms,
-	}
-
-	ad, err := server.store.CreateFacebookAd(ctx, args)
-
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, ad)
-}
 
 type getFacebookAdRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
@@ -192,37 +129,36 @@ func (server *Server) listFacebookAdsByPageName(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, ads)
-
 }
 
-type listFacebookAdsByAdIDRequest struct {
-	AdID         int64 `form:"ad_id" binding:"required"`
+type listFacebookJobsRequest struct {
 	PageLocation int32 `form:"page_location" binding:"required,min=1"`
 	PageSize     int32 `form:"page_size" binding:"required,min=5,max=10"`
 }
 
-func (server *Server) listFacebookAdsByAdID(ctx *gin.Context) {
-	var req listFacebookAdsByAdIDRequest
+func (server *Server) listFacebookJobs(ctx *gin.Context) {
+	var req listFacebookJobsRequest
 
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	args := db.ListFacebookAdsByAdIDParams{
-		AdID:   sql.NullInt64{Int64: req.AdID, Valid: true},
+	args := db.ListFacebookJobsParams{
 		Limit:  req.PageSize,
 		Offset: (req.PageLocation - 1) * req.PageSize,
 	}
 
-	ads, err := server.store.ListFacebookAdsByAdID(ctx, args)
+	jobsDB, err := server.store.ListFacebookJobs(ctx, args)
 
 	if err != nil {
 
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	ctx.JSON(http.StatusOK, ads)
+
+	ctx.JSON(http.StatusOK, jobsDB)
+
 }
 
 type deleteFacebookAdRequest struct {
@@ -252,7 +188,7 @@ func (server *Server) deleteFacebookAd(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, err)
 }
 
-type getSearchRequest struct {
+type createJobRequest struct {
 	SearchTerms        string `json:"search_terms" binding:"required"`
 	AccessToken        string `json:"access_token" binding:"required"`
 	PageTotal          int32  `json:"page_total" binding:"required,min=1,max=1000"`
@@ -263,44 +199,47 @@ type getSearchRequest struct {
 	AdReachedCountries string `json:"ad_reached_countries" binding:"required,oneof=BO MX"`
 }
 
-func (server *Server) getSearch(ctx *gin.Context) {
-	var req getSearchRequest
+type createJobResponse struct {
+	SearchTerms string `json:"search_terms"`
+	JobID       int64  `json:"job_id"`
+	AccessToken string `json:"access_token"`
+	TotalAds    int    `json:"total_token"`
+}
+
+func (server *Server) createJob(ctx *gin.Context) {
+	var req createJobRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	adStream, err := server.facebookClient.CreateFacebookAd(ctx, &pb.CreateFacebookAdRequest{
-		SearchTerms:        req.SearchTerms,
-		AccessToken:        req.AccessToken,
-		PageTotal:          req.PageTotal,
-		SearchTotal:        req.SearchTotal,
-		AdActiveStatus:     req.AdActiveStatus,
-		AdDeliveryDateMax:  req.AdDeliveryDateMax,
-		AdDeliveryDateMin:  req.AdDeliveryDateMin,
-		AdReachedCountries: req.AdReachedCountries,
-	})
+	// Check if job exists
 
-	if err != nil {
-		log.Print("ERROR FROM GRPC CALL", err)
-
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+	argsJobQuery := db.GetPastFacebookJobParams{
+		SearchTerms:        sql.NullString{String: req.SearchTerms, Valid: true},
+		PageTotal:          sql.NullInt64{Int64: int64(req.PageTotal), Valid: true},
+		SearchTotal:        sql.NullInt64{Int64: int64(req.SearchTotal), Valid: true},
+		AdActiveStatus:     sql.NullString{String: req.AdActiveStatus, Valid: true},
+		AdDeliveryDateMax:  sql.NullString{String: req.AdDeliveryDateMax, Valid: true},
+		AdDeliveryDateMin:  sql.NullString{String: req.AdDeliveryDateMin, Valid: true},
+		AdReachedCountries: sql.NullString{String: req.AdReachedCountries, Valid: true},
 	}
 
-	var adResults []*pb.FacebookAd
+	jobDB, err := server.store.GetPastFacebookJob(ctx, argsJobQuery)
 
-	for {
-		ad, err := adStream.Recv()
+	if err == sql.ErrNoRows {
 
-		if err == io.EOF {
-			break
-		}
+		adStream, err := server.facebookClient.CreateFacebookAd(ctx, &pb.CreateFacebookAdRequest{
+			SearchTerms:        req.SearchTerms,
+			AccessToken:        req.AccessToken,
+			PageTotal:          req.PageTotal,
+			SearchTotal:        req.SearchTotal,
+			AdActiveStatus:     req.AdActiveStatus,
+			AdDeliveryDateMax:  req.AdDeliveryDateMax,
+			AdDeliveryDateMin:  req.AdDeliveryDateMin,
+			AdReachedCountries: req.AdReachedCountries,
+		})
 
 		if err != nil {
 			log.Print("ERROR FROM GRPC CALL", err)
@@ -313,10 +252,185 @@ func (server *Server) getSearch(ctx *gin.Context) {
 			return
 		}
 
-		// fmt.Print(ad)
+		for {
 
-		adResults = append(adResults, ad.FacebookAd)
+			adSet, err := adStream.Recv()
+
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				log.Print("ERROR FROM GRPC CALL", err)
+
+				if err == sql.ErrNoRows {
+					ctx.JSON(http.StatusNotFound, errorResponse(err))
+					return
+				}
+				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+				return
+			}
+			// Create Job Args
+			argsJobCreation := db.CreateFacebookJobParams{
+				SearchTerms:        sql.NullString{String: req.SearchTerms, Valid: true},
+				AccessToken:        sql.NullString{String: req.AccessToken, Valid: true},
+				PageTotal:          sql.NullInt64{Int64: int64(req.PageTotal), Valid: true},
+				SearchTotal:        sql.NullInt64{Int64: int64(req.SearchTotal), Valid: true},
+				AdActiveStatus:     sql.NullString{String: req.AdActiveStatus, Valid: true},
+				AdDeliveryDateMax:  sql.NullString{String: req.AdDeliveryDateMax, Valid: true},
+				AdDeliveryDateMin:  sql.NullString{String: req.AdDeliveryDateMin, Valid: true},
+				AdReachedCountries: sql.NullString{String: req.AdReachedCountries, Valid: true},
+			}
+
+			// Create Job in DB
+			jobGlobal, err := server.store.CreateFacebookJob(ctx, argsJobCreation)
+
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+				return
+			}
+
+			// For Ads
+			for _, facebookAd := range adSet.FacebookAd {
+
+				adID, err := stringToBigInt(facebookAd.AdId)
+
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+
+				pageID, err := stringToBigInt(facebookAd.PageId)
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+
+				// Create Ad in DB
+				args := db.CreateFacebookAdParams{
+					AdID:                      adID,
+					PageID:                    sql.NullInt64{Int64: pageID, Valid: true},
+					PageName:                  sql.NullString{String: facebookAd.PageName, Valid: true},
+					AdSnapshotUrl:             sql.NullString{String: facebookAd.AdSnapshotUrl, Valid: true},
+					AdCreativeBody:            sql.NullString{String: facebookAd.AdCreativeBody, Valid: true},
+					AdCreativeLinkCaption:     sql.NullString{String: facebookAd.AdCreativeLinkCaption, Valid: true},
+					AdCreativeLinkDescription: sql.NullString{String: facebookAd.AdCreativeLinkDescription, Valid: true},
+					AdCreativeLinkTitle:       sql.NullString{String: facebookAd.AdCreativeLinkTitle, Valid: true},
+					AdDeliveryStartTime:       sql.NullString{String: facebookAd.AdDeliveryStartTime, Valid: true},
+					AdDeliveryStopTime:        sql.NullString{String: facebookAd.AdDeliveryStopTime, Valid: true},
+					FundingEntity:             sql.NullString{String: facebookAd.FundingEntity, Valid: true},
+					ImpressionsMax:            sql.NullInt32{Int32: facebookAd.ImpressionsMax, Valid: true},
+					ImpressionsMin:            sql.NullInt32{Int32: facebookAd.ImpressionsMin, Valid: true},
+					SpendMin:                  sql.NullInt32{Int32: facebookAd.SpendMin, Valid: true},
+					SpendMax:                  sql.NullInt32{Int32: facebookAd.SpendMax, Valid: true},
+					Currency:                  sql.NullString{String: facebookAd.Currency, Valid: true},
+					AdUrl:                     sql.NullString{String: facebookAd.AdUrl, Valid: true},
+					SocialMediaFacebook:       sql.NullString{String: facebookAd.SocialMediaFacebook, Valid: true},
+					SocialMediaInstagram:      sql.NullString{String: facebookAd.SocialMediaInstagram, Valid: true},
+					SocialMediaWhatsapp:       sql.NullString{String: facebookAd.SocialMediaWhatsapp, Valid: true},
+					SearchTerms:               sql.NullString{String: facebookAd.SearchTerms, Valid: true},
+					JobID:                     sql.NullInt64{Int64: jobGlobal.ID, Valid: true},
+					AdCreationTime:            sql.NullString{String: facebookAd.AdCreationTime, Valid: true},
+					PotentialReachMax:         sql.NullInt32{Int32: facebookAd.PotentialReachMax, Valid: true},
+					PotentialReachMin:         sql.NullInt32{Int32: facebookAd.PotentialReachMin, Valid: true},
+				}
+
+				_, err = server.store.CreateFacebookAd(ctx, args)
+
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+			}
+
+			// Create Demo inDB
+			for _, facebookDemo := range adSet.FacebookAdDemo {
+
+				adID, err := stringToBigInt(facebookDemo.AdId)
+
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+
+				pageID, err := stringToBigInt(facebookDemo.PageId)
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+
+				argsDemo := db.CreateFacebookDemoParams{
+					AdID:                sql.NullInt64{Int64: adID, Valid: true},
+					JobID:               sql.NullInt64{Int64: jobGlobal.ID, Valid: true},
+					PageID:              sql.NullInt64{Int64: pageID, Valid: true},
+					Age:                 sql.NullString{String: facebookDemo.Age, Valid: true},
+					Gender:              sql.NullString{String: facebookDemo.Gender, Valid: true},
+					Percentage:          sql.NullString{String: fmt.Sprint(facebookDemo.Percentage), Valid: true},
+					AdDeliveryStartTime: sql.NullString{String: facebookDemo.AdDeliveryStartTime, Valid: true},
+				}
+
+				_, err = server.store.CreateFacebookDemo(ctx, argsDemo)
+
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+			}
+
+			// Create Region inDB
+			for _, facebookRegion := range adSet.FacebookAdRegion {
+				adID, err := stringToBigInt(facebookRegion.AdId)
+
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+
+				pageID, err := stringToBigInt(facebookRegion.PageId)
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+
+				argsregion := db.CreateFacebookRegionParams{
+					AdID:                sql.NullInt64{Int64: adID, Valid: true},
+					JobID:               sql.NullInt64{Int64: jobGlobal.ID, Valid: true},
+					PageID:              sql.NullInt64{Int64: pageID, Valid: true},
+					Region:              sql.NullString{String: facebookRegion.Region, Valid: true},
+					Percentage:          sql.NullString{String: fmt.Sprint(facebookRegion.Percentage), Valid: true},
+					AdDeliveryStartTime: sql.NullString{String: facebookRegion.AdDeliveryStartTime, Valid: true},
+				}
+				_, err = server.store.CreateFacebookRegion(ctx, argsregion)
+
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+
+			}
+		}
 	}
 
-	ctx.JSON(http.StatusOK, adResults)
+	// If search does not exists
+	fbAds, err := server.store.ListFacebookAdsByJobID(ctx, sql.NullInt64{Int64: jobDB.ID, Valid: true})
+
+	var response createJobResponse
+
+	response.AccessToken = req.AccessToken
+	response.JobID = jobDB.ID
+	response.SearchTerms = req.SearchTerms
+	response.TotalAds = len(fbAds)
+
+	ctx.JSON(http.StatusOK, response)
+}
+
+func stringToBigInt(stringInput string) (int64, error) {
+
+	i, err := strconv.ParseInt(stringInput, 10, 64)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return i, nil
 }

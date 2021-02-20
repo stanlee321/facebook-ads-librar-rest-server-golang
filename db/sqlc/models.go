@@ -4,11 +4,12 @@ package db
 
 import (
 	"database/sql"
+	"time"
 )
 
 type FacebookAd struct {
-	ID                        int64          `json:"id"`
-	AdID                      sql.NullInt64  `json:"ad_id"`
+	AdID                      int64          `json:"ad_id"`
+	JobID                     sql.NullInt64  `json:"job_id"`
 	PageID                    sql.NullInt64  `json:"page_id"`
 	PageName                  sql.NullString `json:"page_name"`
 	AdSnapshotUrl             sql.NullString `json:"ad_snapshot_url"`
@@ -19,35 +20,54 @@ type FacebookAd struct {
 	AdDeliveryStartTime       sql.NullString `json:"ad_delivery_start_time"`
 	AdDeliveryStopTime        sql.NullString `json:"ad_delivery_stop_time"`
 	FundingEntity             sql.NullString `json:"funding_entity"`
-	ImpressionsMin            sql.NullString `json:"impressions_min"`
-	SpendMin                  sql.NullInt64  `json:"spend_min"`
-	SpendMax                  sql.NullInt64  `json:"spend_max"`
+	ImpressionsMin            sql.NullInt32  `json:"impressions_min"`
+	ImpressionsMax            sql.NullInt32  `json:"impressions_max"`
+	SpendMin                  sql.NullInt32  `json:"spend_min"`
+	SpendMax                  sql.NullInt32  `json:"spend_max"`
 	Currency                  sql.NullString `json:"currency"`
 	AdUrl                     sql.NullString `json:"ad_url"`
 	SocialMediaFacebook       sql.NullString `json:"social_media_facebook"`
 	SocialMediaInstagram      sql.NullString `json:"social_media_instagram"`
 	SocialMediaWhatsapp       sql.NullString `json:"social_media_whatsapp"`
 	SearchTerms               sql.NullString `json:"search_terms"`
-	CreatedAt                 interface{}    `json:"created_at"`
+	AdCreationTime            sql.NullString `json:"ad_creation_time"`
+	PotentialReachMax         sql.NullInt32  `json:"potential_reach_max"`
+	PotentialReachMin         sql.NullInt32  `json:"potential_reach_min"`
+	CreatedAt                 time.Time      `json:"created_at"`
 }
 
 type FacebookDemo struct {
 	ID                  int64          `json:"id"`
+	JobID               sql.NullInt64  `json:"job_id"`
 	AdID                sql.NullInt64  `json:"ad_id"`
 	PageID              sql.NullInt64  `json:"page_id"`
-	Age                 sql.NullInt32  `json:"age"`
+	Age                 sql.NullString `json:"age"`
 	Gender              sql.NullString `json:"gender"`
-	Percentage          interface{}    `json:"percentage"`
+	Percentage          sql.NullString `json:"percentage"`
 	AdDeliveryStartTime sql.NullString `json:"ad_delivery_start_time"`
-	CreatedAt           interface{}    `json:"created_at"`
+	CreatedAt           time.Time      `json:"created_at"`
+}
+
+type FacebookJob struct {
+	ID                 int64          `json:"id"`
+	SearchTerms        sql.NullString `json:"search_terms"`
+	AccessToken        sql.NullString `json:"access_token"`
+	PageTotal          sql.NullInt64  `json:"page_total"`
+	SearchTotal        sql.NullInt64  `json:"search_total"`
+	AdActiveStatus     sql.NullString `json:"ad_active_status"`
+	AdDeliveryDateMax  sql.NullString `json:"ad_delivery_date_max"`
+	AdDeliveryDateMin  sql.NullString `json:"ad_delivery_date_min"`
+	AdReachedCountries sql.NullString `json:"ad_reached_countries"`
+	CreatedAt          time.Time      `json:"created_at"`
 }
 
 type FacebookRegion struct {
 	ID                  int64          `json:"id"`
+	JobID               sql.NullInt64  `json:"job_id"`
 	AdID                sql.NullInt64  `json:"ad_id"`
 	PageID              sql.NullInt64  `json:"page_id"`
-	Region              sql.NullInt32  `json:"region"`
+	Region              sql.NullString `json:"region"`
 	Percentage          sql.NullString `json:"percentage"`
 	AdDeliveryStartTime sql.NullString `json:"ad_delivery_start_time"`
-	CreatedAt           interface{}    `json:"created_at"`
+	CreatedAt           time.Time      `json:"created_at"`
 }

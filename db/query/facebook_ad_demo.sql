@@ -1,13 +1,14 @@
 -- name: CreateFacebookDemo :one
 INSERT INTO "FacebookDemos" (
   ad_id,
+  job_id,
   page_id,
   age,
   gender,
   percentage,
   ad_delivery_start_time
 ) VALUES (
-  $1, $2, $3, $4, $5, $6
+  $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING *;
 
@@ -28,6 +29,14 @@ WHERE ad_id = $1
 ORDER BY id
 LIMIT $2
 OFFSET $3;
+
+-- name: ListFacebookDemosByJobID :many
+SELECT * FROM "FacebookDemos"
+WHERE job_id = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3;
+
 
 
 -- name: ListFacebookDemosByPageID :many

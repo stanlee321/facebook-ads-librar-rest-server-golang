@@ -11,20 +11,22 @@ import (
 const createFacebookRegion = `-- name: CreateFacebookRegion :one
 INSERT INTO "FacebookRegions" (
   ad_id,
+  job_id,
   page_id,
   region,
   percentage,
   ad_delivery_start_time
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6
 )
-RETURNING id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at
+RETURNING id, job_id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at
 `
 
 type CreateFacebookRegionParams struct {
 	AdID                sql.NullInt64  `json:"ad_id"`
+	JobID               sql.NullInt64  `json:"job_id"`
 	PageID              sql.NullInt64  `json:"page_id"`
-	Region              sql.NullInt32  `json:"region"`
+	Region              sql.NullString `json:"region"`
 	Percentage          sql.NullString `json:"percentage"`
 	AdDeliveryStartTime sql.NullString `json:"ad_delivery_start_time"`
 }
@@ -32,6 +34,7 @@ type CreateFacebookRegionParams struct {
 func (q *Queries) CreateFacebookRegion(ctx context.Context, arg CreateFacebookRegionParams) (FacebookRegion, error) {
 	row := q.db.QueryRowContext(ctx, createFacebookRegion,
 		arg.AdID,
+		arg.JobID,
 		arg.PageID,
 		arg.Region,
 		arg.Percentage,
@@ -40,6 +43,7 @@ func (q *Queries) CreateFacebookRegion(ctx context.Context, arg CreateFacebookRe
 	var i FacebookRegion
 	err := row.Scan(
 		&i.ID,
+		&i.JobID,
 		&i.AdID,
 		&i.PageID,
 		&i.Region,
@@ -61,7 +65,7 @@ func (q *Queries) DeleteFaceookRegion(ctx context.Context, id int64) error {
 }
 
 const getFacebookRegion = `-- name: GetFacebookRegion :one
-SELECT id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at FROM "FacebookRegions"
+SELECT id, job_id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at FROM "FacebookRegions"
 WHERE id = $1 LIMIT 1
 `
 
@@ -70,6 +74,7 @@ func (q *Queries) GetFacebookRegion(ctx context.Context, id int64) (FacebookRegi
 	var i FacebookRegion
 	err := row.Scan(
 		&i.ID,
+		&i.JobID,
 		&i.AdID,
 		&i.PageID,
 		&i.Region,
@@ -81,7 +86,7 @@ func (q *Queries) GetFacebookRegion(ctx context.Context, id int64) (FacebookRegi
 }
 
 const listFacebookRegions = `-- name: ListFacebookRegions :many
-SELECT id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at FROM "FacebookRegions"
+SELECT id, job_id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at FROM "FacebookRegions"
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -103,6 +108,7 @@ func (q *Queries) ListFacebookRegions(ctx context.Context, arg ListFacebookRegio
 		var i FacebookRegion
 		if err := rows.Scan(
 			&i.ID,
+			&i.JobID,
 			&i.AdID,
 			&i.PageID,
 			&i.Region,
@@ -124,7 +130,7 @@ func (q *Queries) ListFacebookRegions(ctx context.Context, arg ListFacebookRegio
 }
 
 const listFacebookRegionsByAdID = `-- name: ListFacebookRegionsByAdID :many
-SELECT id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at FROM "FacebookRegions"
+SELECT id, job_id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at FROM "FacebookRegions"
 WHERE ad_id = $1
 ORDER BY id
 LIMIT $2
@@ -148,6 +154,53 @@ func (q *Queries) ListFacebookRegionsByAdID(ctx context.Context, arg ListFaceboo
 		var i FacebookRegion
 		if err := rows.Scan(
 			&i.ID,
+			&i.JobID,
+			&i.AdID,
+			&i.PageID,
+			&i.Region,
+			&i.Percentage,
+			&i.AdDeliveryStartTime,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFacebookRegionsByJobID = `-- name: ListFacebookRegionsByJobID :many
+SELECT id, job_id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at FROM "FacebookRegions"
+WHERE job_id = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3
+`
+
+type ListFacebookRegionsByJobIDParams struct {
+	JobID  sql.NullInt64 `json:"job_id"`
+	Limit  int32         `json:"limit"`
+	Offset int32         `json:"offset"`
+}
+
+func (q *Queries) ListFacebookRegionsByJobID(ctx context.Context, arg ListFacebookRegionsByJobIDParams) ([]FacebookRegion, error) {
+	rows, err := q.db.QueryContext(ctx, listFacebookRegionsByJobID, arg.JobID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FacebookRegion{}
+	for rows.Next() {
+		var i FacebookRegion
+		if err := rows.Scan(
+			&i.ID,
+			&i.JobID,
 			&i.AdID,
 			&i.PageID,
 			&i.Region,
@@ -169,7 +222,7 @@ func (q *Queries) ListFacebookRegionsByAdID(ctx context.Context, arg ListFaceboo
 }
 
 const listFacebookRegionsByPageID = `-- name: ListFacebookRegionsByPageID :many
-SELECT id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at FROM "FacebookRegions"
+SELECT id, job_id, ad_id, page_id, region, percentage, ad_delivery_start_time, created_at FROM "FacebookRegions"
 WHERE page_id = $1
 ORDER BY id
 LIMIT $2
@@ -193,6 +246,7 @@ func (q *Queries) ListFacebookRegionsByPageID(ctx context.Context, arg ListFaceb
 		var i FacebookRegion
 		if err := rows.Scan(
 			&i.ID,
+			&i.JobID,
 			&i.AdID,
 			&i.PageID,
 			&i.Region,

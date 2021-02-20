@@ -11,6 +11,7 @@ import (
 const createFacebookAd = `-- name: CreateFacebookAd :one
 INSERT INTO "FacebookAd" (
   ad_id,
+  job_id,
   page_id,
   page_name,
   ad_snapshot_url,
@@ -22,6 +23,7 @@ INSERT INTO "FacebookAd" (
   ad_delivery_stop_time,
   funding_entity,
   impressions_min,
+  impressions_max,
   spend_min,
   spend_max,
   currency,
@@ -29,15 +31,19 @@ INSERT INTO "FacebookAd" (
   social_media_facebook,
   social_media_instagram,
   social_media_whatsapp,
-  search_terms
+  search_terms,
+  ad_creation_time,
+  potential_reach_max,
+  potential_reach_min
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25
 )
-RETURNING id, ad_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, created_at
+RETURNING ad_id, job_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, impressions_max, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, ad_creation_time, potential_reach_max, potential_reach_min, created_at
 `
 
 type CreateFacebookAdParams struct {
-	AdID                      sql.NullInt64  `json:"ad_id"`
+	AdID                      int64          `json:"ad_id"`
+	JobID                     sql.NullInt64  `json:"job_id"`
 	PageID                    sql.NullInt64  `json:"page_id"`
 	PageName                  sql.NullString `json:"page_name"`
 	AdSnapshotUrl             sql.NullString `json:"ad_snapshot_url"`
@@ -48,20 +54,25 @@ type CreateFacebookAdParams struct {
 	AdDeliveryStartTime       sql.NullString `json:"ad_delivery_start_time"`
 	AdDeliveryStopTime        sql.NullString `json:"ad_delivery_stop_time"`
 	FundingEntity             sql.NullString `json:"funding_entity"`
-	ImpressionsMin            sql.NullString `json:"impressions_min"`
-	SpendMin                  sql.NullInt64  `json:"spend_min"`
-	SpendMax                  sql.NullInt64  `json:"spend_max"`
+	ImpressionsMin            sql.NullInt32  `json:"impressions_min"`
+	ImpressionsMax            sql.NullInt32  `json:"impressions_max"`
+	SpendMin                  sql.NullInt32  `json:"spend_min"`
+	SpendMax                  sql.NullInt32  `json:"spend_max"`
 	Currency                  sql.NullString `json:"currency"`
 	AdUrl                     sql.NullString `json:"ad_url"`
 	SocialMediaFacebook       sql.NullString `json:"social_media_facebook"`
 	SocialMediaInstagram      sql.NullString `json:"social_media_instagram"`
 	SocialMediaWhatsapp       sql.NullString `json:"social_media_whatsapp"`
 	SearchTerms               sql.NullString `json:"search_terms"`
+	AdCreationTime            sql.NullString `json:"ad_creation_time"`
+	PotentialReachMax         sql.NullInt32  `json:"potential_reach_max"`
+	PotentialReachMin         sql.NullInt32  `json:"potential_reach_min"`
 }
 
 func (q *Queries) CreateFacebookAd(ctx context.Context, arg CreateFacebookAdParams) (FacebookAd, error) {
 	row := q.db.QueryRowContext(ctx, createFacebookAd,
 		arg.AdID,
+		arg.JobID,
 		arg.PageID,
 		arg.PageName,
 		arg.AdSnapshotUrl,
@@ -73,6 +84,7 @@ func (q *Queries) CreateFacebookAd(ctx context.Context, arg CreateFacebookAdPara
 		arg.AdDeliveryStopTime,
 		arg.FundingEntity,
 		arg.ImpressionsMin,
+		arg.ImpressionsMax,
 		arg.SpendMin,
 		arg.SpendMax,
 		arg.Currency,
@@ -81,11 +93,14 @@ func (q *Queries) CreateFacebookAd(ctx context.Context, arg CreateFacebookAdPara
 		arg.SocialMediaInstagram,
 		arg.SocialMediaWhatsapp,
 		arg.SearchTerms,
+		arg.AdCreationTime,
+		arg.PotentialReachMax,
+		arg.PotentialReachMin,
 	)
 	var i FacebookAd
 	err := row.Scan(
-		&i.ID,
 		&i.AdID,
+		&i.JobID,
 		&i.PageID,
 		&i.PageName,
 		&i.AdSnapshotUrl,
@@ -97,6 +112,7 @@ func (q *Queries) CreateFacebookAd(ctx context.Context, arg CreateFacebookAdPara
 		&i.AdDeliveryStopTime,
 		&i.FundingEntity,
 		&i.ImpressionsMin,
+		&i.ImpressionsMax,
 		&i.SpendMin,
 		&i.SpendMax,
 		&i.Currency,
@@ -105,6 +121,9 @@ func (q *Queries) CreateFacebookAd(ctx context.Context, arg CreateFacebookAdPara
 		&i.SocialMediaInstagram,
 		&i.SocialMediaWhatsapp,
 		&i.SearchTerms,
+		&i.AdCreationTime,
+		&i.PotentialReachMax,
+		&i.PotentialReachMin,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -112,25 +131,25 @@ func (q *Queries) CreateFacebookAd(ctx context.Context, arg CreateFacebookAdPara
 
 const deleteFaceookAd = `-- name: DeleteFaceookAd :exec
 DELETE FROM "FacebookAd"
-WHERE id = $1
+WHERE ad_id = $1
 `
 
-func (q *Queries) DeleteFaceookAd(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteFaceookAd, id)
+func (q *Queries) DeleteFaceookAd(ctx context.Context, adID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteFaceookAd, adID)
 	return err
 }
 
 const getFacebookAd = `-- name: GetFacebookAd :one
-SELECT id, ad_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, created_at FROM "FacebookAd"
-WHERE id = $1 LIMIT 1
+SELECT ad_id, job_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, impressions_max, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, ad_creation_time, potential_reach_max, potential_reach_min, created_at FROM "FacebookAd"
+WHERE ad_id = $1 LIMIT 1
 `
 
-func (q *Queries) GetFacebookAd(ctx context.Context, id int64) (FacebookAd, error) {
-	row := q.db.QueryRowContext(ctx, getFacebookAd, id)
+func (q *Queries) GetFacebookAd(ctx context.Context, adID int64) (FacebookAd, error) {
+	row := q.db.QueryRowContext(ctx, getFacebookAd, adID)
 	var i FacebookAd
 	err := row.Scan(
-		&i.ID,
 		&i.AdID,
+		&i.JobID,
 		&i.PageID,
 		&i.PageName,
 		&i.AdSnapshotUrl,
@@ -142,6 +161,7 @@ func (q *Queries) GetFacebookAd(ctx context.Context, id int64) (FacebookAd, erro
 		&i.AdDeliveryStopTime,
 		&i.FundingEntity,
 		&i.ImpressionsMin,
+		&i.ImpressionsMax,
 		&i.SpendMin,
 		&i.SpendMax,
 		&i.Currency,
@@ -150,14 +170,16 @@ func (q *Queries) GetFacebookAd(ctx context.Context, id int64) (FacebookAd, erro
 		&i.SocialMediaInstagram,
 		&i.SocialMediaWhatsapp,
 		&i.SearchTerms,
+		&i.AdCreationTime,
+		&i.PotentialReachMax,
+		&i.PotentialReachMin,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listFacebookAds = `-- name: ListFacebookAds :many
-SELECT id, ad_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, created_at FROM "FacebookAd"
-ORDER BY id
+SELECT ad_id, job_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, impressions_max, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, ad_creation_time, potential_reach_max, potential_reach_min, created_at FROM "FacebookAd"
 LIMIT $1
 OFFSET $2
 `
@@ -177,8 +199,8 @@ func (q *Queries) ListFacebookAds(ctx context.Context, arg ListFacebookAdsParams
 	for rows.Next() {
 		var i FacebookAd
 		if err := rows.Scan(
-			&i.ID,
 			&i.AdID,
+			&i.JobID,
 			&i.PageID,
 			&i.PageName,
 			&i.AdSnapshotUrl,
@@ -190,6 +212,7 @@ func (q *Queries) ListFacebookAds(ctx context.Context, arg ListFacebookAdsParams
 			&i.AdDeliveryStopTime,
 			&i.FundingEntity,
 			&i.ImpressionsMin,
+			&i.ImpressionsMax,
 			&i.SpendMin,
 			&i.SpendMax,
 			&i.Currency,
@@ -198,6 +221,9 @@ func (q *Queries) ListFacebookAds(ctx context.Context, arg ListFacebookAdsParams
 			&i.SocialMediaInstagram,
 			&i.SocialMediaWhatsapp,
 			&i.SearchTerms,
+			&i.AdCreationTime,
+			&i.PotentialReachMax,
+			&i.PotentialReachMin,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -213,22 +239,13 @@ func (q *Queries) ListFacebookAds(ctx context.Context, arg ListFacebookAdsParams
 	return items, nil
 }
 
-const listFacebookAdsByAdID = `-- name: ListFacebookAdsByAdID :many
-SELECT id, ad_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, created_at FROM "FacebookAd"
-WHERE ad_id = $1
-ORDER BY id
-LIMIT $2
-OFFSET $3
+const listFacebookAdsByJobID = `-- name: ListFacebookAdsByJobID :many
+SELECT ad_id, job_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, impressions_max, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, ad_creation_time, potential_reach_max, potential_reach_min, created_at FROM "FacebookAd"
+WHERE job_id = $1
 `
 
-type ListFacebookAdsByAdIDParams struct {
-	AdID   sql.NullInt64 `json:"ad_id"`
-	Limit  int32         `json:"limit"`
-	Offset int32         `json:"offset"`
-}
-
-func (q *Queries) ListFacebookAdsByAdID(ctx context.Context, arg ListFacebookAdsByAdIDParams) ([]FacebookAd, error) {
-	rows, err := q.db.QueryContext(ctx, listFacebookAdsByAdID, arg.AdID, arg.Limit, arg.Offset)
+func (q *Queries) ListFacebookAdsByJobID(ctx context.Context, jobID sql.NullInt64) ([]FacebookAd, error) {
+	rows, err := q.db.QueryContext(ctx, listFacebookAdsByJobID, jobID)
 	if err != nil {
 		return nil, err
 	}
@@ -237,8 +254,8 @@ func (q *Queries) ListFacebookAdsByAdID(ctx context.Context, arg ListFacebookAds
 	for rows.Next() {
 		var i FacebookAd
 		if err := rows.Scan(
-			&i.ID,
 			&i.AdID,
+			&i.JobID,
 			&i.PageID,
 			&i.PageName,
 			&i.AdSnapshotUrl,
@@ -250,6 +267,7 @@ func (q *Queries) ListFacebookAdsByAdID(ctx context.Context, arg ListFacebookAds
 			&i.AdDeliveryStopTime,
 			&i.FundingEntity,
 			&i.ImpressionsMin,
+			&i.ImpressionsMax,
 			&i.SpendMin,
 			&i.SpendMax,
 			&i.Currency,
@@ -258,6 +276,9 @@ func (q *Queries) ListFacebookAdsByAdID(ctx context.Context, arg ListFacebookAds
 			&i.SocialMediaInstagram,
 			&i.SocialMediaWhatsapp,
 			&i.SearchTerms,
+			&i.AdCreationTime,
+			&i.PotentialReachMax,
+			&i.PotentialReachMin,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -274,9 +295,8 @@ func (q *Queries) ListFacebookAdsByAdID(ctx context.Context, arg ListFacebookAds
 }
 
 const listFacebookAdsByPageID = `-- name: ListFacebookAdsByPageID :many
-SELECT id, ad_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, created_at FROM "FacebookAd"
+SELECT ad_id, job_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, impressions_max, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, ad_creation_time, potential_reach_max, potential_reach_min, created_at FROM "FacebookAd"
 WHERE page_id = $1
-ORDER BY id
 LIMIT $2
 OFFSET $3
 `
@@ -297,8 +317,8 @@ func (q *Queries) ListFacebookAdsByPageID(ctx context.Context, arg ListFacebookA
 	for rows.Next() {
 		var i FacebookAd
 		if err := rows.Scan(
-			&i.ID,
 			&i.AdID,
+			&i.JobID,
 			&i.PageID,
 			&i.PageName,
 			&i.AdSnapshotUrl,
@@ -310,6 +330,7 @@ func (q *Queries) ListFacebookAdsByPageID(ctx context.Context, arg ListFacebookA
 			&i.AdDeliveryStopTime,
 			&i.FundingEntity,
 			&i.ImpressionsMin,
+			&i.ImpressionsMax,
 			&i.SpendMin,
 			&i.SpendMax,
 			&i.Currency,
@@ -318,6 +339,9 @@ func (q *Queries) ListFacebookAdsByPageID(ctx context.Context, arg ListFacebookA
 			&i.SocialMediaInstagram,
 			&i.SocialMediaWhatsapp,
 			&i.SearchTerms,
+			&i.AdCreationTime,
+			&i.PotentialReachMax,
+			&i.PotentialReachMin,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -334,9 +358,8 @@ func (q *Queries) ListFacebookAdsByPageID(ctx context.Context, arg ListFacebookA
 }
 
 const listFacebookAdsByPageName = `-- name: ListFacebookAdsByPageName :many
-SELECT id, ad_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, created_at FROM "FacebookAd"
+SELECT ad_id, job_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, impressions_max, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, ad_creation_time, potential_reach_max, potential_reach_min, created_at FROM "FacebookAd"
 WHERE page_name = $1
-ORDER BY id
 LIMIT $2
 OFFSET $3
 `
@@ -357,8 +380,8 @@ func (q *Queries) ListFacebookAdsByPageName(ctx context.Context, arg ListFaceboo
 	for rows.Next() {
 		var i FacebookAd
 		if err := rows.Scan(
-			&i.ID,
 			&i.AdID,
+			&i.JobID,
 			&i.PageID,
 			&i.PageName,
 			&i.AdSnapshotUrl,
@@ -370,6 +393,7 @@ func (q *Queries) ListFacebookAdsByPageName(ctx context.Context, arg ListFaceboo
 			&i.AdDeliveryStopTime,
 			&i.FundingEntity,
 			&i.ImpressionsMin,
+			&i.ImpressionsMax,
 			&i.SpendMin,
 			&i.SpendMax,
 			&i.Currency,
@@ -378,6 +402,9 @@ func (q *Queries) ListFacebookAdsByPageName(ctx context.Context, arg ListFaceboo
 			&i.SocialMediaInstagram,
 			&i.SocialMediaWhatsapp,
 			&i.SearchTerms,
+			&i.AdCreationTime,
+			&i.PotentialReachMax,
+			&i.PotentialReachMin,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

@@ -11,29 +11,32 @@ import (
 const createFacebookDemo = `-- name: CreateFacebookDemo :one
 INSERT INTO "FacebookDemos" (
   ad_id,
+  job_id,
   page_id,
   age,
   gender,
   percentage,
   ad_delivery_start_time
 ) VALUES (
-  $1, $2, $3, $4, $5, $6
+  $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at
+RETURNING id, job_id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at
 `
 
 type CreateFacebookDemoParams struct {
 	AdID                sql.NullInt64  `json:"ad_id"`
+	JobID               sql.NullInt64  `json:"job_id"`
 	PageID              sql.NullInt64  `json:"page_id"`
-	Age                 sql.NullInt32  `json:"age"`
+	Age                 sql.NullString `json:"age"`
 	Gender              sql.NullString `json:"gender"`
-	Percentage          interface{}    `json:"percentage"`
+	Percentage          sql.NullString `json:"percentage"`
 	AdDeliveryStartTime sql.NullString `json:"ad_delivery_start_time"`
 }
 
 func (q *Queries) CreateFacebookDemo(ctx context.Context, arg CreateFacebookDemoParams) (FacebookDemo, error) {
 	row := q.db.QueryRowContext(ctx, createFacebookDemo,
 		arg.AdID,
+		arg.JobID,
 		arg.PageID,
 		arg.Age,
 		arg.Gender,
@@ -43,6 +46,7 @@ func (q *Queries) CreateFacebookDemo(ctx context.Context, arg CreateFacebookDemo
 	var i FacebookDemo
 	err := row.Scan(
 		&i.ID,
+		&i.JobID,
 		&i.AdID,
 		&i.PageID,
 		&i.Age,
@@ -65,7 +69,7 @@ func (q *Queries) DeleteFaceookDemo(ctx context.Context, id int64) error {
 }
 
 const getFacebookDemo = `-- name: GetFacebookDemo :one
-SELECT id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at FROM "FacebookDemos"
+SELECT id, job_id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at FROM "FacebookDemos"
 WHERE id = $1 LIMIT 1
 `
 
@@ -74,6 +78,7 @@ func (q *Queries) GetFacebookDemo(ctx context.Context, id int64) (FacebookDemo, 
 	var i FacebookDemo
 	err := row.Scan(
 		&i.ID,
+		&i.JobID,
 		&i.AdID,
 		&i.PageID,
 		&i.Age,
@@ -86,7 +91,7 @@ func (q *Queries) GetFacebookDemo(ctx context.Context, id int64) (FacebookDemo, 
 }
 
 const listFacebookDemos = `-- name: ListFacebookDemos :many
-SELECT id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at FROM "FacebookDemos"
+SELECT id, job_id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at FROM "FacebookDemos"
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -108,6 +113,7 @@ func (q *Queries) ListFacebookDemos(ctx context.Context, arg ListFacebookDemosPa
 		var i FacebookDemo
 		if err := rows.Scan(
 			&i.ID,
+			&i.JobID,
 			&i.AdID,
 			&i.PageID,
 			&i.Age,
@@ -130,7 +136,7 @@ func (q *Queries) ListFacebookDemos(ctx context.Context, arg ListFacebookDemosPa
 }
 
 const listFacebookDemosByAdID = `-- name: ListFacebookDemosByAdID :many
-SELECT id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at FROM "FacebookDemos"
+SELECT id, job_id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at FROM "FacebookDemos"
 WHERE ad_id = $1
 ORDER BY id
 LIMIT $2
@@ -154,6 +160,54 @@ func (q *Queries) ListFacebookDemosByAdID(ctx context.Context, arg ListFacebookD
 		var i FacebookDemo
 		if err := rows.Scan(
 			&i.ID,
+			&i.JobID,
+			&i.AdID,
+			&i.PageID,
+			&i.Age,
+			&i.Gender,
+			&i.Percentage,
+			&i.AdDeliveryStartTime,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFacebookDemosByJobID = `-- name: ListFacebookDemosByJobID :many
+SELECT id, job_id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at FROM "FacebookDemos"
+WHERE job_id = $1
+ORDER BY id
+LIMIT $2
+OFFSET $3
+`
+
+type ListFacebookDemosByJobIDParams struct {
+	JobID  sql.NullInt64 `json:"job_id"`
+	Limit  int32         `json:"limit"`
+	Offset int32         `json:"offset"`
+}
+
+func (q *Queries) ListFacebookDemosByJobID(ctx context.Context, arg ListFacebookDemosByJobIDParams) ([]FacebookDemo, error) {
+	rows, err := q.db.QueryContext(ctx, listFacebookDemosByJobID, arg.JobID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FacebookDemo{}
+	for rows.Next() {
+		var i FacebookDemo
+		if err := rows.Scan(
+			&i.ID,
+			&i.JobID,
 			&i.AdID,
 			&i.PageID,
 			&i.Age,
@@ -176,7 +230,7 @@ func (q *Queries) ListFacebookDemosByAdID(ctx context.Context, arg ListFacebookD
 }
 
 const listFacebookDemosByPageID = `-- name: ListFacebookDemosByPageID :many
-SELECT id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at FROM "FacebookDemos"
+SELECT id, job_id, ad_id, page_id, age, gender, percentage, ad_delivery_start_time, created_at FROM "FacebookDemos"
 WHERE page_id = $1
 ORDER BY id
 LIMIT $2
@@ -200,6 +254,7 @@ func (q *Queries) ListFacebookDemosByPageID(ctx context.Context, arg ListFaceboo
 		var i FacebookDemo
 		if err := rows.Scan(
 			&i.ID,
+			&i.JobID,
 			&i.AdID,
 			&i.PageID,
 			&i.Age,

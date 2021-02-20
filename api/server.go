@@ -20,14 +20,13 @@ func NewServer(store db.Store, facebookClient pb.FacebookAdsServiceClient) *Serv
 
 	router := gin.Default()
 
-	router.POST("/api/facebook/ads/create", server.createFacebookAd)
 	//router.GET("/api/facebook/ads/:id", server.getFacebookAd)
 	router.GET("/api/facebook/ads/list/all/", server.listFacebookAds)
 	router.GET("/api/facebook/ads/list/by_page_id", server.listFacebookAdsByPageID)
 	router.GET("/api/facebook/ads/list/by_page_name", server.listFacebookAdsByPageName)
-	router.GET("/api/facebook/ads/list/by_page_ad_id", server.listFacebookAdsByAdID)
 	router.POST("/api/facebook/ads/delete/:id", server.deleteFacebookAd)
-	router.POST("/api/facebook/ads/search", server.getSearch)
+	router.POST("/api/facebook/ads/create_job", server.createJob)
+	router.GET("/api/facebook/jobs/list/all", server.listFacebookJobs)
 
 	// Add routtes
 
