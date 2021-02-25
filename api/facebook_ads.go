@@ -37,7 +37,7 @@ func (server *Server) getFacebookAd(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, ad)
+	ctx.JSON(http.StatusOK, convertFBAdDBtoFBAdPB(ad))
 }
 
 type listFacebookAdByPageIDRequest struct {
@@ -65,8 +65,7 @@ func (server *Server) listFacebookAds(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-
-	ctx.JSON(http.StatusOK, ads)
+	ctx.JSON(http.StatusOK, convertFBAdDBtoFBAdPBList(ads))
 }
 
 type listFacebookAdsByPageIDRequest struct {
@@ -97,7 +96,7 @@ func (server *Server) listFacebookAdsByPageID(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, ads)
+	ctx.JSON(http.StatusOK, convertFBAdDBtoFBAdPBList(ads))
 }
 
 type listFacebookAdsByPageNameRequest struct {
@@ -128,7 +127,7 @@ func (server *Server) listFacebookAdsByPageName(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, ads)
+	ctx.JSON(http.StatusOK, convertFBAdDBtoFBAdPBList(ads))
 }
 
 type listFacebookJobsRequest struct {
@@ -157,7 +156,7 @@ func (server *Server) listFacebookJobs(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, jobsDB)
+	ctx.JSON(http.StatusOK, convertJobDBtoJobPB(jobsDB))
 
 }
 
@@ -438,4 +437,72 @@ func stringToBigInt(stringInput string) (int64, error) {
 	}
 
 	return i, nil
+}
+
+func convertFBAdDBtoFBAdPBList(ads []db.FacebookAd) []*pb.FacebookAd {
+
+	var adsPB []*pb.FacebookAd
+
+	for _, ad := range ads {
+
+		newPB := convertFBAdDBtoFBAdPB(ad)
+
+		adsPB = append(adsPB, newPB)
+	}
+	return adsPB
+}
+
+func convertFBAdDBtoFBAdPB(ad db.FacebookAd) *pb.FacebookAd {
+
+	newPB := &pb.FacebookAd{
+		AdId:                      fmt.Sprint(ad.AdID),
+		PageId:                    fmt.Sprint(ad.PageID),
+		PageName:                  ad.PageName.String,
+		AdSnapshotUrl:             ad.AdSnapshotUrl.String,
+		AdCreativeBody:            ad.AdCreativeBody.String,
+		AdCreativeLinkCaption:     ad.AdCreativeLinkCaption.String,
+		AdCreativeLinkDescription: ad.AdCreativeLinkDescription.String,
+		AdCreativeLinkTitle:       ad.AdCreativeLinkTitle.String,
+		AdDeliveryStartTime:       ad.AdDeliveryStartTime.String,
+		AdDeliveryStopTime:        ad.AdDeliveryStopTime.String,
+		FundingEntity:             ad.FundingEntity.String,
+		ImpressionsMin:            ad.ImpressionsMin.Int32,
+		ImpressionsMax:            ad.ImpressionsMax.Int32,
+		SpendMin:                  ad.SpendMin.Int32,
+		SpendMax:                  ad.SpendMax.Int32,
+		Currency:                  ad.Currency.String,
+		AdUrl:                     ad.AdUrl.String,
+		SocialMediaFacebook:       ad.SocialMediaFacebook.String,
+		SocialMediaInstagram:      ad.SocialMediaInstagram.String,
+		SocialMediaWhatsapp:       ad.SocialMediaWhatsapp.String,
+		SearchTerms:               ad.SearchTerms.String,
+		AdCreationTime:            ad.AdCreationTime.String,
+		PotentialReachMax:         ad.PotentialReachMax.Int32,
+		PotentialReachMin:         ad.PotentialReachMin.Int32,
+	}
+	return newPB
+}
+
+func convertJobDBtoJobPB(jobs []db.FacebookJob) []*pb.CreateFacebookAdRequest {
+
+	var jobsPB []*pb.CreateFacebookAdRequest
+
+	for _, job := range jobs {
+
+		nJob := &pb.CreateFacebookAdRequest{
+			AccessToken:        job.AccessToken.String,
+			PageTotal:          int32(job.PageTotal.Int64),
+			SearchTotal:        int32(job.SearchTotal.Int64),
+			AdActiveStatus:     job.AdActiveStatus.String,
+			AdDeliveryDateMax:  job.AdDeliveryDateMax.String,
+			AdDeliveryDateMin:  job.AdDeliveryDateMin.String,
+			AdReachedCountries: job.AdReachedCountries.String,
+			SearchTerms:        job.SearchTerms.String,
+		}
+
+		jobsPB = append(jobsPB, nJob)
+	}
+
+	return jobsPB
+
 }
