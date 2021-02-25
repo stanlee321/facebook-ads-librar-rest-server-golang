@@ -408,11 +408,16 @@ func (server *Server) createJob(ctx *gin.Context) {
 				}
 
 			}
+
+			ctx.JSON(http.StatusOK, jobGlobal)
+			return
 		}
 	}
 
 	// If search does not exists
-	fbAds, err := server.store.ListFacebookAdsByJobID(ctx, sql.NullInt64{Int64: jobDB.ID, Valid: true})
+	fbAds, err := server.store.ListFacebookAdsByJobID(ctx,
+		sql.NullInt64{Int64: jobDB.ID,
+			Valid: true})
 
 	var response createJobResponse
 

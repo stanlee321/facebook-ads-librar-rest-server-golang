@@ -4,19 +4,26 @@ import (
 	"github.com/gin-gonic/gin"
 	db "github.com/stanlee321/facebook-ads-server/db/sqlc"
 	pb "github.com/stanlee321/facebook-ads-server/pkg/api/v1"
+	pb_etl "github.com/stanlee321/facebook-ads-server/pkg/etl/api/v1"
 )
 
 // Server serves HTTP for our facebook ads server
 type Server struct {
-	store          db.Store
-	router         *gin.Engine
-	facebookClient pb.FacebookAdsServiceClient
+	store             db.Store
+	router            *gin.Engine
+	facebookClient    pb.FacebookAdsServiceClient
+	facebookETLClient pb_etl.FacebookAdsETLServiceClient
 }
 
 // NewServer creates a new HTTP server and setup routing
-func NewServer(store db.Store, facebookClient pb.FacebookAdsServiceClient) *Server {
+func NewServer(store db.Store,
+	facebookClient pb.FacebookAdsServiceClient,
+	facebookETLClient pb_etl.FacebookAdsETLServiceClient) *Server {
 
-	server := &Server{store: store, facebookClient: facebookClient}
+	server := &Server{store: store,
+		facebookClient:    facebookClient,
+		facebookETLClient: facebookETLClient,
+	}
 
 	router := gin.Default()
 
@@ -27,6 +34,9 @@ func NewServer(store db.Store, facebookClient pb.FacebookAdsServiceClient) *Serv
 	router.POST("/api/facebook/ads/delete/:id", server.deleteFacebookAd)
 	router.POST("/api/facebook/ads/create_job", server.createJob)
 	router.GET("/api/facebook/jobs/list/all", server.listFacebookJobs)
+
+	// ETLs
+	router.GET("/api/facebook/ads/etl/ind_a_b/:job_id", server.getIndicatorAB)
 
 	// Add routtes
 
