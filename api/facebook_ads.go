@@ -456,7 +456,7 @@ func convertFBAdDBtoFBAdPB(ad db.FacebookAd) *pb.FacebookAd {
 
 	newPB := &pb.FacebookAd{
 		AdId:                      fmt.Sprint(ad.AdID),
-		PageId:                    fmt.Sprint(ad.PageID),
+		PageId:                    fmt.Sprint(ad.PageID.Int64),
 		PageName:                  ad.PageName.String,
 		AdSnapshotUrl:             ad.AdSnapshotUrl.String,
 		AdCreativeBody:            ad.AdCreativeBody.String,
