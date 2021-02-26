@@ -5,35 +5,34 @@ import (
 	"log"
 
 	_ "github.com/lib/pq"
-	"github.com/stanlee321/facebook-ads-server/api"
+	"github.com/stanlee321/facebook-ads-server/cmd/server/api"
 	db "github.com/stanlee321/facebook-ads-server/db/sqlc"
-	pb "github.com/stanlee321/facebook-ads-server/pkg/api/v1"
+	pb "github.com/stanlee321/facebook-ads-server/pkg/ads/api/v1"
 	pb_etl "github.com/stanlee321/facebook-ads-server/pkg/etl/api/v1"
-
+	"github.com/stanlee321/facebook-ads-server/pkg/util"
 	"google.golang.org/grpc"
-)
-
-const (
-	dbDriver      = "postgres"
-	dbSource      = "postgres://root:root@localhost:5432/facebook_ads?sslmode=disable"
-	serverAddress = "0.0.0.0:8080"
-
-	gRPCAddress    = "0.0.0.0:4040"
-	gRPCETLAddress = "0.0.0.0:50051"
 )
 
 func main() {
 	var err error
+
+	// load configs
+	conf, err := util.LoadConfig(".", "PROD")
+
+	if err != nil {
+		log.Fatal("Cannot load config: ", err)
+	}
+
 	opts := grpc.WithInsecure()
 
 	// Dial to Service
-	connFacebook, err := grpc.Dial(gRPCAddress, opts)
+	connFacebook, err := grpc.Dial(conf.GRPCAddress, opts)
 	if err != nil {
 		panic(err)
 	}
 
 	// Dial to ETL Service
-	connFacebookETL, err := grpc.Dial(gRPCETLAddress, opts)
+	connFacebookETL, err := grpc.Dial(conf.GRPCETLAddress, opts)
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +46,7 @@ func main() {
 	defer connFacebookETL.Close()
 
 	// Open DB Connection
-	connDB, err := sql.Open(dbDriver, dbSource)
+	connDB, err := sql.Open(conf.DBDriver, conf.DBSource)
 
 	// Create store instance
 	store := db.NewStore(connDB)
@@ -56,7 +55,7 @@ func main() {
 	server := api.NewServer(store, facebookClient, facebookETLClient)
 
 	// Init Server
-	err = server.Start(serverAddress)
+	err = server.Start(conf.ServerAddress)
 
 	if err != nil {
 		log.Fatal("Cannot start server: ", err)

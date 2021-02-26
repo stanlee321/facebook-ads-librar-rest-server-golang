@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	db "github.com/stanlee321/facebook-ads-server/db/sqlc"
-	pb "github.com/stanlee321/facebook-ads-server/pkg/api/v1"
+	pb "github.com/stanlee321/facebook-ads-server/pkg/ads/api/v1"
 )
 
 type getFacebookAdRequest struct {

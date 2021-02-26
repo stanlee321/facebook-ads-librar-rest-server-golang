@@ -1,0 +1,37 @@
+version: "3.2"
+services:
+  postgresql-db:
+    container_name: postgresql-queue-db
+    image: postgres:12-alpine
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=queue_db
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+    volumes:
+        - db_psql_db:/var/lib/postgresql/data
+    networks:
+      - ads_net
+  ads-rest-api:
+    image: stanlee321/ads/facebook_ads:latest
+    environment:
+      DB_DRIVER: "postgres"
+      DB_SOURCE: "postgres://root:root@postgresql-db:5432/facebook_ads?sslmode=disable"
+      SERVER_ADDRESS: "0.0.0.0:8080"
+      GRPC_ADDRESS: "0.0.0.0:50051"
+      GRPC_ETL_ADDRESS: fb-ads-etl:50051
+    expose:
+      - 8080
+    networks:
+      - ads_net
+
+networks:
+  ads_net:
+    external:
+      name: ads_network
+
+volumes:
+  db_psql_db:
+    external:
+      name: db-psql-db
