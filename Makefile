@@ -1,4 +1,4 @@
-PROJECT_NAME = facebook-ads
+PROJECT_NAME = microservice-ads
 BIN_DIR = ./bin
 BIN_FILE = $(PROJECT_NAME)
 CMD_DIR = ./cmd
@@ -43,7 +43,7 @@ cert:
 
 build:
 	@echo "[*] Building $(PROJECT_NAME)..."
-	go build $(LDFLAGS) -o $(BIN_DIR)/$(BIN_FILE) $(CMD_DIR)/server/...
+	go build $(LDFLAGS) -o $(BIN_DIR)/$(BIN_FILE)
 	@echo "[*] Finish..."
 
 build_docker_image:

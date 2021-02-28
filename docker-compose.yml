@@ -11,8 +11,6 @@ services:
       - POSTGRES_PASSWORD=root
     volumes:
         - db_psql_db:/var/lib/postgresql/data
-    networks:
-      - ads_net
   ads-rest-api:
     image: stanlee321/ads/facebook_ads:latest
     environment:
@@ -23,13 +21,6 @@ services:
       GRPC_ETL_ADDRESS: fb-ads-etl:50051
     expose:
       - 8080
-    networks:
-      - ads_net
-
-networks:
-  ads_net:
-    external:
-      name: ads_network
 
 volumes:
   db_psql_db:

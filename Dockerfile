@@ -15,7 +15,6 @@ ADD cmd ./cmd
 ADD bin ./bin
 ADD pkg ./pkg
 ADD db ./db
-ADD docker ./docker
 ADD app.env .
 ADD go.mod .
 ADD go.sum .
@@ -55,3 +54,5 @@ RUN ln -s /usr/local/bin/docker-entrypoint.sh /entrypoint.sh # backwards compat
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 CMD ["microservice-ads"]
+
+EXPOSE 50051
