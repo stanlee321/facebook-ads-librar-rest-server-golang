@@ -17,11 +17,12 @@ INSERT INTO "FacebookJob" (
   ad_active_status,
   ad_delivery_date_max,
   ad_delivery_date_min,
-  ad_reached_countries
+  ad_reached_countries,
+  total_found_ads
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
+  $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
-RETURNING id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, created_at
+RETURNING id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, total_found_ads, created_at
 `
 
 type CreateFacebookJobParams struct {
@@ -33,6 +34,7 @@ type CreateFacebookJobParams struct {
 	AdDeliveryDateMax  sql.NullString `json:"ad_delivery_date_max"`
 	AdDeliveryDateMin  sql.NullString `json:"ad_delivery_date_min"`
 	AdReachedCountries sql.NullString `json:"ad_reached_countries"`
+	TotalFoundAds      sql.NullInt64  `json:"total_found_ads"`
 }
 
 func (q *Queries) CreateFacebookJob(ctx context.Context, arg CreateFacebookJobParams) (FacebookJob, error) {
@@ -45,6 +47,7 @@ func (q *Queries) CreateFacebookJob(ctx context.Context, arg CreateFacebookJobPa
 		arg.AdDeliveryDateMax,
 		arg.AdDeliveryDateMin,
 		arg.AdReachedCountries,
+		arg.TotalFoundAds,
 	)
 	var i FacebookJob
 	err := row.Scan(
@@ -57,6 +60,7 @@ func (q *Queries) CreateFacebookJob(ctx context.Context, arg CreateFacebookJobPa
 		&i.AdDeliveryDateMax,
 		&i.AdDeliveryDateMin,
 		&i.AdReachedCountries,
+		&i.TotalFoundAds,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -73,7 +77,7 @@ func (q *Queries) DeleteFaceookJob(ctx context.Context, id int64) error {
 }
 
 const getFacebookJob = `-- name: GetFacebookJob :one
-SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, created_at FROM "FacebookJob"
+SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, total_found_ads, created_at FROM "FacebookJob"
 WHERE id = $1 LIMIT 1
 `
 
@@ -90,13 +94,14 @@ func (q *Queries) GetFacebookJob(ctx context.Context, id int64) (FacebookJob, er
 		&i.AdDeliveryDateMax,
 		&i.AdDeliveryDateMin,
 		&i.AdReachedCountries,
+		&i.TotalFoundAds,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getPastFacebookJob = `-- name: GetPastFacebookJob :one
-SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, created_at FROM "FacebookJob"
+SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, total_found_ads, created_at FROM "FacebookJob"
 WHERE search_terms = $1 AND
   page_total = $2 AND
   search_total = $3 AND
@@ -138,13 +143,14 @@ func (q *Queries) GetPastFacebookJob(ctx context.Context, arg GetPastFacebookJob
 		&i.AdDeliveryDateMax,
 		&i.AdDeliveryDateMin,
 		&i.AdReachedCountries,
+		&i.TotalFoundAds,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listFacebookJobs = `-- name: ListFacebookJobs :many
-SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, created_at FROM "FacebookJob"
+SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, total_found_ads, created_at FROM "FacebookJob"
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -174,6 +180,7 @@ func (q *Queries) ListFacebookJobs(ctx context.Context, arg ListFacebookJobsPara
 			&i.AdDeliveryDateMax,
 			&i.AdDeliveryDateMin,
 			&i.AdReachedCountries,
+			&i.TotalFoundAds,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -190,7 +197,7 @@ func (q *Queries) ListFacebookJobs(ctx context.Context, arg ListFacebookJobsPara
 }
 
 const listFacebookJobsBySearch = `-- name: ListFacebookJobsBySearch :many
-SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, created_at FROM "FacebookJob"
+SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, total_found_ads, created_at FROM "FacebookJob"
 WHERE search_terms = $1
 ORDER BY id
 LIMIT $2
@@ -222,6 +229,7 @@ func (q *Queries) ListFacebookJobsBySearch(ctx context.Context, arg ListFacebook
 			&i.AdDeliveryDateMax,
 			&i.AdDeliveryDateMin,
 			&i.AdReachedCountries,
+			&i.TotalFoundAds,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -238,7 +246,7 @@ func (q *Queries) ListFacebookJobsBySearch(ctx context.Context, arg ListFacebook
 }
 
 const listFacebookJobsByToken = `-- name: ListFacebookJobsByToken :many
-SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, created_at FROM "FacebookJob"
+SELECT id, search_terms, access_token, page_total, search_total, ad_active_status, ad_delivery_date_max, ad_delivery_date_min, ad_reached_countries, total_found_ads, created_at FROM "FacebookJob"
 WHERE access_token = $1
 ORDER BY id
 LIMIT $2
@@ -270,6 +278,7 @@ func (q *Queries) ListFacebookJobsByToken(ctx context.Context, arg ListFacebookJ
 			&i.AdDeliveryDateMax,
 			&i.AdDeliveryDateMin,
 			&i.AdReachedCountries,
+			&i.TotalFoundAds,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

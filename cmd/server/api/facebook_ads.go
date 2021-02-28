@@ -156,7 +156,7 @@ func (server *Server) listFacebookJobs(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, convertJobDBtoJobPB(jobsDB))
+	ctx.JSON(http.StatusOK, convertJobDBtoJobResponse(jobsDB))
 
 }
 
@@ -202,7 +202,7 @@ type createJobResponse struct {
 	SearchTerms string `json:"search_terms"`
 	JobID       int64  `json:"job_id"`
 	AccessToken string `json:"access_token"`
-	TotalAds    int    `json:"total_token"`
+	TotalAds    int    `json:"total_ads"`
 }
 
 func (server *Server) createJob(ctx *gin.Context) {
@@ -279,6 +279,7 @@ func (server *Server) createJob(ctx *gin.Context) {
 				AdDeliveryDateMax:  sql.NullString{String: req.AdDeliveryDateMax, Valid: true},
 				AdDeliveryDateMin:  sql.NullString{String: req.AdDeliveryDateMin, Valid: true},
 				AdReachedCountries: sql.NullString{String: req.AdReachedCountries, Valid: true},
+				TotalFoundAds:      sql.NullInt64{Int64: int64(len(adSet.FacebookAd)), Valid: true},
 			}
 
 			// Create Job in DB
@@ -408,7 +409,14 @@ func (server *Server) createJob(ctx *gin.Context) {
 
 			}
 
-			ctx.JSON(http.StatusOK, jobGlobal)
+			jobResponse := createJobResponse{
+				SearchTerms: jobGlobal.SearchTerms.String,
+				JobID:       jobGlobal.ID,
+				AccessToken: jobGlobal.AccessToken.String,
+				TotalAds:    len(adSet.FacebookAd),
+			}
+
+			ctx.JSON(http.StatusOK, jobResponse)
 			return
 		}
 	}
@@ -483,9 +491,14 @@ func convertFBAdDBtoFBAdPB(ad db.FacebookAd) *pb.FacebookAd {
 	return newPB
 }
 
-func convertJobDBtoJobPB(jobs []db.FacebookJob) []*pb.CreateFacebookAdRequest {
+type facebookJobListResponse struct {
+	FacebookJob   *pb.CreateFacebookAdRequest `json:"facebook_job"`
+	TotalFoundAds int64                       `json:"total_found_ads"`
+}
 
-	var jobsPB []*pb.CreateFacebookAdRequest
+func convertJobDBtoJobResponse(jobs []db.FacebookJob) []*facebookJobListResponse {
+
+	var jobsResponse []*facebookJobListResponse
 
 	for _, job := range jobs {
 
@@ -499,10 +512,12 @@ func convertJobDBtoJobPB(jobs []db.FacebookJob) []*pb.CreateFacebookAdRequest {
 			AdReachedCountries: job.AdReachedCountries.String,
 			SearchTerms:        job.SearchTerms.String,
 		}
-
-		jobsPB = append(jobsPB, nJob)
+		response := facebookJobListResponse{
+			FacebookJob:   nJob,
+			TotalFoundAds: job.TotalFoundAds.Int64,
+		}
+		jobsResponse = append(jobsResponse, &response)
 	}
 
-	return jobsPB
-
+	return jobsResponse
 }

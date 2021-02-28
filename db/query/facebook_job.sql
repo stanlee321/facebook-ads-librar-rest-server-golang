@@ -7,9 +7,10 @@ INSERT INTO "FacebookJob" (
   ad_active_status,
   ad_delivery_date_max,
   ad_delivery_date_min,
-  ad_reached_countries
+  ad_reached_countries,
+  total_found_ads
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
+  $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
 RETURNING *;
 

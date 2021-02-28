@@ -58,6 +58,7 @@ type FacebookJob struct {
 	AdDeliveryDateMax  sql.NullString `json:"ad_delivery_date_max"`
 	AdDeliveryDateMin  sql.NullString `json:"ad_delivery_date_min"`
 	AdReachedCountries sql.NullString `json:"ad_reached_countries"`
+	TotalFoundAds      sql.NullInt64  `json:"total_found_ads"`
 	CreatedAt          time.Time      `json:"created_at"`
 }
 

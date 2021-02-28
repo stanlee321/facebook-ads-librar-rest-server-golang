@@ -60,6 +60,7 @@ CREATE TABLE "FacebookJob" (
   "ad_delivery_date_max" varchar,
   "ad_delivery_date_min" varchar,
   "ad_reached_countries" varchar,
+  "total_found_ads" bigint,
   "created_at" timestamp NOT NULL DEFAULT (now())
 );
 
