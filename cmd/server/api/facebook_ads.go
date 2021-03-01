@@ -561,6 +561,7 @@ func convertFBAdDBtoFBAdPB(ad db.FacebookAd) *pb.FacebookAd {
 type facebookJobListResponse struct {
 	FacebookJob   *pb.CreateFacebookAdRequest `json:"facebook_job"`
 	TotalFoundAds int64                       `json:"total_found_ads"`
+	JobID         int64                       `json:"job_id"`
 }
 
 func convertJobDBtoJobResponse(jobs []db.FacebookJob) []*facebookJobListResponse {
@@ -581,6 +582,7 @@ func convertJobDBtoJobResponse(jobs []db.FacebookJob) []*facebookJobListResponse
 		}
 		response := facebookJobListResponse{
 			FacebookJob:   nJob,
+			JobID:         job.ID,
 			TotalFoundAds: job.TotalFoundAds.Int64,
 		}
 		jobsResponse = append(jobsResponse, &response)

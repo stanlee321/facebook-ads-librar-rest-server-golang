@@ -40,10 +40,10 @@ Content-Type : application/json
 ```json
 
 {
-    "search_terms": "", // the search term used
-    "job_id":1, // ID for created this job
-    "access_token": "23qf1qf12", // Used used token
-    "total_token": 1212 // the total ads found (token is bad typed)
+    "search_terms": "José Carlos Sánchez Verazaín",
+    "job_id": 1,
+    "access_token": "EAAG.....2tDrPTs7nH10Jf",
+    "total_ads": 48
 }
 
 ```
@@ -75,12 +75,21 @@ This list all the cread jobs
 
 ```json
 
-{
-    "search_terms": "", // the search term used
-    "job_id":1, // ID for created this job
-    "access_token": "23qf1qf12", // Used used token
-    "total_token": 1212 // the total ads found (token is bad typed)
-}
+[
+    {
+        "facebook_job": {
+            "search_terms": "José Carlos Sánchez Verazaín",
+            "access_token": "EAAGOv4XxRSMBA.........PTs7nH10Jf",
+            "page_total": 1000,
+            "search_total": 5000,
+            "ad_active_status": "ALL",
+            "ad_delivery_date_max": "2021-02-28",
+            "ad_delivery_date_min": "2021-01-01",
+            "ad_reached_countries": "BO"
+        },
+        "total_found_ads": 49
+    }
+]
 
 ```
 
