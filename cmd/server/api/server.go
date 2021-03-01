@@ -49,7 +49,7 @@ func NewServer(store db.Store,
 
 	//router.GET("/api/facebook/ads/:id", server.getFacebookAd)
 	router.GET("/api/facebook/ads/list/by_job_id/", server.listFacebookAdsByJobID)
-	router.GET("/api/facebook/ads/list/byJob/", server.listFacebookAds)
+	router.GET("/api/facebook/ads/list/all/", server.listFacebookAds)
 	router.GET("/api/facebook/ads/list/by_page_id", server.listFacebookAdsByPageID)
 	router.GET("/api/facebook/ads/list/by_page_name", server.listFacebookAdsByPageName)
 	router.POST("/api/facebook/ads/delete/:id", server.deleteFacebookAd)

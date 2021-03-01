@@ -103,9 +103,10 @@ Once you have created Jobs, you can list Facebook ads.
 
 It uses pagination for show the acutal facebook ads.
 
+The `byJob` is a type error , it will be changed in the next release to `all`.
 **URL**
 
-`/api/facebook/ads/list/all/?page_location=1&page_size=10`
+`/api/facebook/ads/list/byJob/page_location=1&page_size=10`
 
 **TYPE**
 
