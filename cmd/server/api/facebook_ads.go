@@ -245,7 +245,7 @@ type createJobRequest struct {
 	AdActiveStatus     string `json:"ad_active_status" binding:"required,oneof=ACTIVE INACTIVE ALL"`
 	AdDeliveryDateMax  string `json:"ad_delivery_date_max" binding:"required"`
 	AdDeliveryDateMin  string `json:"ad_delivery_date_min" binding:"required"`
-	AdReachedCountries string `json:"ad_reached_countries" binding:"required,oneof=BO MX"`
+	AdReachedCountries string `json:"ad_reached_countries" binding:"required"` //,oneof=BO MX
 }
 
 type createJobResponse struct {
