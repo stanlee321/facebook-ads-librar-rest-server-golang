@@ -1,6 +1,5 @@
 CREATE TABLE "FacebookAd" (
   "ad_id" bigint PRIMARY KEY NOT NULL,
-  "job_id" bigint,
   "page_id" bigint,
   "page_name" varchar,
   "ad_snapshot_url" varchar,
@@ -29,7 +28,6 @@ CREATE TABLE "FacebookAd" (
 
 CREATE TABLE "FacebookDemos" (
   "id" BIGSERIAL PRIMARY KEY,
-  "job_id" bigint,
   "ad_id" bigint,
   "page_id" bigint,
   "age" varchar,
@@ -41,7 +39,6 @@ CREATE TABLE "FacebookDemos" (
 
 CREATE TABLE "FacebookRegions" (
   "id" BIGSERIAL PRIMARY KEY,
-  "job_id" bigint,
   "ad_id" bigint,
   "page_id" bigint,
   "region" varchar,
@@ -64,18 +61,49 @@ CREATE TABLE "FacebookJob" (
   "created_at" timestamp NOT NULL DEFAULT (now())
 );
 
-ALTER TABLE "FacebookAd" ADD FOREIGN KEY ("job_id") REFERENCES "FacebookJob" ("id");
+CREATE TABLE "JobToFacebookAd" (
+  "id" BIGSERIAL PRIMARY KEY,
+  "job_id" bigint,
+  "ad_id" bigint,
+  "created_at" timestamp NOT NULL DEFAULT (now())
+);
 
-ALTER TABLE "FacebookDemos" ADD FOREIGN KEY ("job_id") REFERENCES "FacebookJob" ("id");
+CREATE TABLE "JobToFacebookDemo" (
+  "id" BIGSERIAL PRIMARY KEY,
+  "job_id" bigint,
+  "ad_demo_id" bigint,
+  "created_at" timestamp NOT NULL DEFAULT (now())
+);
+
+CREATE TABLE "JobToFacebookRe" (
+  "id" BIGSERIAL PRIMARY KEY,
+  "job_id" bigint,
+  "ad_region_id" bigint,
+  "created_at" timestamp NOT NULL DEFAULT (now())
+);
 
 ALTER TABLE "FacebookDemos" ADD FOREIGN KEY ("ad_id") REFERENCES "FacebookAd" ("ad_id");
 
-ALTER TABLE "FacebookRegions" ADD FOREIGN KEY ("job_id") REFERENCES "FacebookJob" ("id");
-
 ALTER TABLE "FacebookRegions" ADD FOREIGN KEY ("ad_id") REFERENCES "FacebookAd" ("ad_id");
+
+ALTER TABLE "JobToFacebookAd" ADD FOREIGN KEY ("job_id") REFERENCES "FacebookJob" ("id");
+
+ALTER TABLE "JobToFacebookAd" ADD FOREIGN KEY ("ad_id") REFERENCES "FacebookAd" ("ad_id");
+
+ALTER TABLE "JobToFacebookDemo" ADD FOREIGN KEY ("job_id") REFERENCES "FacebookJob" ("id");
+
+ALTER TABLE "JobToFacebookDemo" ADD FOREIGN KEY ("ad_demo_id") REFERENCES "FacebookDemos" ("id");
+
+ALTER TABLE "JobToFacebookRe" ADD FOREIGN KEY ("job_id") REFERENCES "FacebookJob" ("id");
+
+ALTER TABLE "JobToFacebookRe" ADD FOREIGN KEY ("ad_region_id") REFERENCES "FacebookRegions" ("id");
 
 CREATE INDEX ON "FacebookAd" ("ad_id");
 
-CREATE INDEX ON "FacebookAd" ("job_id");
-
 CREATE INDEX ON "FacebookJob" ("search_terms", "page_total", "search_total", "ad_active_status", "ad_delivery_date_max", "ad_delivery_date_min", "ad_reached_countries");
+
+CREATE INDEX ON "JobToFacebookAd" ("job_id");
+
+CREATE INDEX ON "JobToFacebookDemo" ("job_id");
+
+CREATE INDEX ON "JobToFacebookRe" ("job_id");

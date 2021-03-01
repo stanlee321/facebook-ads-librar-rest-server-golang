@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/stanlee321/facebook-ads-server/db/sqlc"
@@ -260,7 +261,7 @@ func (server *Server) createJob(ctx *gin.Context) {
 			}
 
 			if err != nil {
-				log.Print("ERROR FROM GRPC CALL", err)
+				log.Print("ERROR FROM GRPC call stream...", err)
 
 				if err == sql.ErrNoRows {
 					ctx.JSON(http.StatusNotFound, errorResponse(err))
@@ -283,7 +284,7 @@ func (server *Server) createJob(ctx *gin.Context) {
 			}
 
 			// Create Job in DB
-			jobGlobal, err := server.store.CreateFacebookJob(ctx, argsJobCreation)
+			newJob, err := server.store.CreateFacebookJob(ctx, argsJobCreation)
 
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -329,7 +330,6 @@ func (server *Server) createJob(ctx *gin.Context) {
 					SocialMediaInstagram:      sql.NullString{String: facebookAd.SocialMediaInstagram, Valid: true},
 					SocialMediaWhatsapp:       sql.NullString{String: facebookAd.SocialMediaWhatsapp, Valid: true},
 					SearchTerms:               sql.NullString{String: facebookAd.SearchTerms, Valid: true},
-					JobID:                     sql.NullInt64{Int64: jobGlobal.ID, Valid: true},
 					AdCreationTime:            sql.NullString{String: facebookAd.AdCreationTime, Valid: true},
 					PotentialReachMax:         sql.NullInt32{Int32: facebookAd.PotentialReachMax, Valid: true},
 					PotentialReachMin:         sql.NullInt32{Int32: facebookAd.PotentialReachMin, Valid: true},
@@ -337,10 +337,46 @@ func (server *Server) createJob(ctx *gin.Context) {
 
 				_, err = server.store.CreateFacebookAd(ctx, args)
 
-				if err != nil {
-					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-					return
+				if err == nil {
+					// Create Job To Facebook ad Map
+					argsJTF := db.CreateJobToFacebookAdParams{
+						JobID: sql.NullInt64{Int64: newJob.ID, Valid: true},
+						AdID:  sql.NullInt64{Int64: adID, Valid: true},
+					}
+
+					// Save in DB
+					_, err = server.store.CreateJobToFacebookAd(ctx, argsJTF)
+
+					// If error in save to db
+					if err != nil {
+						ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+						return
+					}
+
+				} else {
+					if strings.Contains("pq: duplicate key value violates unique ", err.Error()) {
+						// Create Job To Facebook ad Map
+						argsJTF := db.CreateJobToFacebookAdParams{
+							JobID: sql.NullInt64{Int64: newJob.ID, Valid: true},
+							AdID:  sql.NullInt64{Int64: adID, Valid: true},
+						}
+
+						// Save in DB
+						_, err = server.store.CreateJobToFacebookAd(ctx, argsJTF)
+
+						// If error in save to db
+						if err != nil {
+							ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+							return
+						}
+					} else {
+						// Another kind of error
+						ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+						return
+					}
+
 				}
+
 			}
 
 			// Create Demo inDB
@@ -361,7 +397,6 @@ func (server *Server) createJob(ctx *gin.Context) {
 
 				argsDemo := db.CreateFacebookDemoParams{
 					AdID:                sql.NullInt64{Int64: adID, Valid: true},
-					JobID:               sql.NullInt64{Int64: jobGlobal.ID, Valid: true},
 					PageID:              sql.NullInt64{Int64: pageID, Valid: true},
 					Age:                 sql.NullString{String: facebookDemo.Age, Valid: true},
 					Gender:              sql.NullString{String: facebookDemo.Gender, Valid: true},
@@ -369,12 +404,28 @@ func (server *Server) createJob(ctx *gin.Context) {
 					AdDeliveryStartTime: sql.NullString{String: facebookDemo.AdDeliveryStartTime, Valid: true},
 				}
 
-				_, err = server.store.CreateFacebookDemo(ctx, argsDemo)
+				demoResponse, err := server.store.CreateFacebookDemo(ctx, argsDemo)
 
 				if err != nil {
 					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 					return
 				}
+
+				// Create Job To Facebook Demo ad Map
+				argsJobToDemo := db.CreateJobToFacebookDemoParams{
+					JobID:    sql.NullInt64{Int64: newJob.ID, Valid: true},
+					AdDemoID: sql.NullInt64{Int64: demoResponse.ID, Valid: true},
+				}
+
+				// Save in DB
+				_, err = server.store.CreateJobToFacebookDemo(ctx, argsJobToDemo)
+
+				// If error in save to db
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+
 			}
 
 			// Create Region inDB
@@ -394,14 +445,28 @@ func (server *Server) createJob(ctx *gin.Context) {
 
 				argsregion := db.CreateFacebookRegionParams{
 					AdID:                sql.NullInt64{Int64: adID, Valid: true},
-					JobID:               sql.NullInt64{Int64: jobGlobal.ID, Valid: true},
 					PageID:              sql.NullInt64{Int64: pageID, Valid: true},
 					Region:              sql.NullString{String: facebookRegion.Region, Valid: true},
 					Percentage:          sql.NullString{String: fmt.Sprint(facebookRegion.Percentage), Valid: true},
 					AdDeliveryStartTime: sql.NullString{String: facebookRegion.AdDeliveryStartTime, Valid: true},
 				}
-				_, err = server.store.CreateFacebookRegion(ctx, argsregion)
+				regionResponse, err := server.store.CreateFacebookRegion(ctx, argsregion)
 
+				if err != nil {
+					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+					return
+				}
+
+				// Create Job To Facebook Region ad Map
+				argsJobToRegion := db.CreateJobToFacebookRegionParams{
+					JobID:      sql.NullInt64{Int64: newJob.ID, Valid: true},
+					AdRegionID: sql.NullInt64{Int64: regionResponse.ID, Valid: true},
+				}
+
+				// Save in DB
+				_, err = server.store.CreateJobToFacebookRegion(ctx, argsJobToRegion)
+
+				// If error in save to db
 				if err != nil {
 					ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 					return
@@ -410,9 +475,9 @@ func (server *Server) createJob(ctx *gin.Context) {
 			}
 
 			jobResponse := createJobResponse{
-				SearchTerms: jobGlobal.SearchTerms.String,
-				JobID:       jobGlobal.ID,
-				AccessToken: jobGlobal.AccessToken.String,
+				SearchTerms: newJob.SearchTerms.String,
+				JobID:       newJob.ID,
+				AccessToken: newJob.AccessToken.String,
 				TotalAds:    len(adSet.FacebookAd),
 			}
 
@@ -420,11 +485,13 @@ func (server *Server) createJob(ctx *gin.Context) {
 			return
 		}
 	}
-
+	argsListJobs := db.ListJobToFacebookAdByJobIDParams{
+		JobID:  sql.NullInt64{Int64: jobDB.ID, Valid: true},
+		Limit:  99999999, // TODO CHECK IF FILTER FOR GET COUNT WITHOUT QUERY
+		Offset: 1,        // TODO CHECK IF FILTER FOR GET COUNT WITHOUT QUERY
+	}
 	// If search does not exists
-	fbAds, err := server.store.ListFacebookAdsByJobID(ctx,
-		sql.NullInt64{Int64: jobDB.ID,
-			Valid: true})
+	fbAds, err := server.store.ListJobToFacebookAdByJobID(ctx, argsListJobs)
 
 	var response createJobResponse
 

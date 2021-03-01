@@ -1,6 +1,9 @@
 package api
 
 import (
+	"time"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	db "github.com/stanlee321/facebook-ads-server/db/sqlc"
 	pb "github.com/stanlee321/facebook-ads-server/pkg/ads/api/v1"
@@ -26,6 +29,23 @@ func NewServer(store db.Store,
 	}
 
 	router := gin.Default()
+
+	// CORS for https://foo.com and https://github.com origins, allowing:
+	// - PUT and PATCH methods
+	// - Origin header
+	// - Credentials share
+	// - Preflight requests cached for 12 hours
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"POST", "GET"},
+		AllowHeaders:     []string{"Origin"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			return origin == "*"
+		},
+		MaxAge: 12 * time.Hour,
+	}))
 
 	//router.GET("/api/facebook/ads/:id", server.getFacebookAd)
 	router.GET("/api/facebook/ads/list/all/", server.listFacebookAds)

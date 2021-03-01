@@ -1,13 +1,12 @@
 -- name: CreateFacebookRegion :one
 INSERT INTO "FacebookRegions" (
   ad_id,
-  job_id,
   page_id,
   region,
   percentage,
   ad_delivery_start_time
 ) VALUES (
-  $1, $2, $3, $4, $5, $6
+  $1, $2, $3, $4, $5
 )
 RETURNING *;
 
@@ -24,13 +23,6 @@ OFFSET $2;
 -- name: ListFacebookRegionsByAdID :many
 SELECT * FROM "FacebookRegions"
 WHERE ad_id = $1
-ORDER BY id
-LIMIT $2
-OFFSET $3;
-
--- name: ListFacebookRegionsByJobID :many
-SELECT * FROM "FacebookRegions"
-WHERE job_id = $1
 ORDER BY id
 LIMIT $2
 OFFSET $3;

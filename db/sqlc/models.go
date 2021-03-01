@@ -9,7 +9,6 @@ import (
 
 type FacebookAd struct {
 	AdID                      int64          `json:"ad_id"`
-	JobID                     sql.NullInt64  `json:"job_id"`
 	PageID                    sql.NullInt64  `json:"page_id"`
 	PageName                  sql.NullString `json:"page_name"`
 	AdSnapshotUrl             sql.NullString `json:"ad_snapshot_url"`
@@ -38,7 +37,6 @@ type FacebookAd struct {
 
 type FacebookDemo struct {
 	ID                  int64          `json:"id"`
-	JobID               sql.NullInt64  `json:"job_id"`
 	AdID                sql.NullInt64  `json:"ad_id"`
 	PageID              sql.NullInt64  `json:"page_id"`
 	Age                 sql.NullString `json:"age"`
@@ -64,11 +62,31 @@ type FacebookJob struct {
 
 type FacebookRegion struct {
 	ID                  int64          `json:"id"`
-	JobID               sql.NullInt64  `json:"job_id"`
 	AdID                sql.NullInt64  `json:"ad_id"`
 	PageID              sql.NullInt64  `json:"page_id"`
 	Region              sql.NullString `json:"region"`
 	Percentage          sql.NullString `json:"percentage"`
 	AdDeliveryStartTime sql.NullString `json:"ad_delivery_start_time"`
 	CreatedAt           time.Time      `json:"created_at"`
+}
+
+type JobToFacebookAd struct {
+	ID        int64         `json:"id"`
+	JobID     sql.NullInt64 `json:"job_id"`
+	AdID      sql.NullInt64 `json:"ad_id"`
+	CreatedAt time.Time     `json:"created_at"`
+}
+
+type JobToFacebookDemo struct {
+	ID        int64         `json:"id"`
+	JobID     sql.NullInt64 `json:"job_id"`
+	AdDemoID  sql.NullInt64 `json:"ad_demo_id"`
+	CreatedAt time.Time     `json:"created_at"`
+}
+
+type JobToFacebookRe struct {
+	ID         int64         `json:"id"`
+	JobID      sql.NullInt64 `json:"job_id"`
+	AdRegionID sql.NullInt64 `json:"ad_region_id"`
+	CreatedAt  time.Time     `json:"created_at"`
 }

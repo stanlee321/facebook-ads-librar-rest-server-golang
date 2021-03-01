@@ -1,7 +1,6 @@
 -- name: CreateFacebookAd :one
 INSERT INTO "FacebookAd" (
   ad_id,
-  job_id,
   page_id,
   page_name,
   ad_snapshot_url,
@@ -26,7 +25,7 @@ INSERT INTO "FacebookAd" (
   potential_reach_max,
   potential_reach_min
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24
 )
 RETURNING *;
 
@@ -46,12 +45,6 @@ SELECT * FROM "FacebookAd"
 WHERE page_id = $1
 LIMIT $2
 OFFSET $3;
-
--- name: ListFacebookAdsByJobID :many
-SELECT * FROM "FacebookAd"
-WHERE job_id = $1;
-
-
 
 -- name: ListFacebookAdsByPageName :many
 SELECT * FROM "FacebookAd"

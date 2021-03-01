@@ -23,10 +23,32 @@ func (server *Server) getIndicatorAB(ctx *gin.Context) {
 		return
 	}
 
-	ads, err := server.store.ListFacebookAdsByJobID(ctx,
-		sql.NullInt64{Int64: req.JobID, Valid: true})
+	argsListJobs := db.ListJobToFacebookAdByJobIDParams{
+		JobID:  sql.NullInt64{Int64: req.JobID, Valid: true},
+		Limit:  99999999, // TODO CHECK IF FILTER FOR GET COUNT WITHOUT QUERY
+		Offset: 1,        // TODO CHECK IF FILTER FOR GET COUNT WITHOUT QUERY
+	}
 
-	log.Print(len(ads), req.JobID)
+	// If search does not exists
+	adsJTF, err := server.store.ListJobToFacebookAdByJobID(ctx, argsListJobs)
+
+	if len(adsJTF) == 0 {
+		ctx.JSON(http.StatusInternalServerError, "NO data for JOB")
+		return
+	}
+
+	var adsList []db.FacebookAd
+
+	for _, adJTF := range adsJTF {
+		ad, err := server.store.GetFacebookAd(ctx, adJTF.AdID.Int64)
+
+		if err != nil {
+			log.Println("Ad not found...")
+		}
+		adsList = append(adsList, ad)
+
+	}
+	log.Print(len(adsList), req.JobID)
 
 	if err != nil {
 
@@ -46,7 +68,7 @@ func (server *Server) getIndicatorAB(ctx *gin.Context) {
 	}
 
 	// Send Stream
-	for _, ad := range convertDBtoPBList(ads) {
+	for _, ad := range convertDBtoPBList(adsList) {
 
 		req := &pb_etl.CreateIndOneRequest{
 			JobId:      req.JobID,
