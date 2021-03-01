@@ -69,6 +69,56 @@ func (server *Server) listFacebookAds(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, convertFBAdDBtoFBAdPBList(ads))
 }
 
+type listFacebookAdByJobIDRequest struct {
+	PageLocation int32 `form:"page_location" binding:"required,min=1"`
+	PageSize     int32 `form:"page_size" binding:"required,min=5,max=10"`
+	JobID        int32 `form:"job_id" binding:"required,min=1"`
+}
+
+func (server *Server) listFacebookAdsByJobID(ctx *gin.Context) {
+
+	var req listFacebookAdByJobIDRequest
+
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	argsJTF := db.ListJobToFacebookAdByJobIDParams{
+		JobID:  sql.NullInt64{Int64: int64(req.JobID), Valid: true},
+		Limit:  req.PageSize,
+		Offset: (req.PageLocation - 1) * req.PageSize,
+	}
+
+	adsJWTDB, err := server.store.ListJobToFacebookAdByJobID(ctx, argsJTF)
+
+	if err == sql.ErrNoRows {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	var ads []db.FacebookAd
+
+	for _, jtb := range adsJWTDB {
+
+		ad, err := server.store.GetFacebookAd(ctx, jtb.AdID.Int64)
+
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+		ads = append(ads, ad)
+	}
+
+	if err != nil {
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	ctx.JSON(http.StatusOK, convertFBAdDBtoFBAdPBList(ads))
+
+}
+
 type listFacebookAdsByPageIDRequest struct {
 	PageID       int64 `form:"page_id" binding:"required"`
 	PageLocation int32 `form:"page_location" binding:"required,min=1"`

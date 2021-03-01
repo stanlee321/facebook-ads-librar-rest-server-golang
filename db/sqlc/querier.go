@@ -30,6 +30,7 @@ type Querier interface {
 	GetJobToFacebookRegion(ctx context.Context, id int64) (JobToFacebookRe, error)
 	GetPastFacebookJob(ctx context.Context, arg GetPastFacebookJobParams) (FacebookJob, error)
 	ListFacebookAds(ctx context.Context, arg ListFacebookAdsParams) ([]FacebookAd, error)
+	ListFacebookAdsByAdID(ctx context.Context, arg ListFacebookAdsByAdIDParams) ([]FacebookAd, error)
 	ListFacebookAdsByPageID(ctx context.Context, arg ListFacebookAdsByPageIDParams) ([]FacebookAd, error)
 	ListFacebookAdsByPageName(ctx context.Context, arg ListFacebookAdsByPageNameParams) ([]FacebookAd, error)
 	ListFacebookDemos(ctx context.Context, arg ListFacebookDemosParams) ([]FacebookDemo, error)

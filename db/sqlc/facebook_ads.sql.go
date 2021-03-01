@@ -233,6 +233,68 @@ func (q *Queries) ListFacebookAds(ctx context.Context, arg ListFacebookAdsParams
 	return items, nil
 }
 
+const listFacebookAdsByAdID = `-- name: ListFacebookAdsByAdID :many
+SELECT ad_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, impressions_max, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, ad_creation_time, potential_reach_max, potential_reach_min, created_at FROM "FacebookAd"
+WHERE ad_id = $1
+LIMIT $2
+OFFSET $3
+`
+
+type ListFacebookAdsByAdIDParams struct {
+	AdID   int64 `json:"ad_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListFacebookAdsByAdID(ctx context.Context, arg ListFacebookAdsByAdIDParams) ([]FacebookAd, error) {
+	rows, err := q.db.QueryContext(ctx, listFacebookAdsByAdID, arg.AdID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FacebookAd{}
+	for rows.Next() {
+		var i FacebookAd
+		if err := rows.Scan(
+			&i.AdID,
+			&i.PageID,
+			&i.PageName,
+			&i.AdSnapshotUrl,
+			&i.AdCreativeBody,
+			&i.AdCreativeLinkCaption,
+			&i.AdCreativeLinkDescription,
+			&i.AdCreativeLinkTitle,
+			&i.AdDeliveryStartTime,
+			&i.AdDeliveryStopTime,
+			&i.FundingEntity,
+			&i.ImpressionsMin,
+			&i.ImpressionsMax,
+			&i.SpendMin,
+			&i.SpendMax,
+			&i.Currency,
+			&i.AdUrl,
+			&i.SocialMediaFacebook,
+			&i.SocialMediaInstagram,
+			&i.SocialMediaWhatsapp,
+			&i.SearchTerms,
+			&i.AdCreationTime,
+			&i.PotentialReachMax,
+			&i.PotentialReachMin,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFacebookAdsByPageID = `-- name: ListFacebookAdsByPageID :many
 SELECT ad_id, page_id, page_name, ad_snapshot_url, ad_creative_body, ad_creative_link_caption, ad_creative_link_description, ad_creative_link_title, ad_delivery_start_time, ad_delivery_stop_time, funding_entity, impressions_min, impressions_max, spend_min, spend_max, currency, ad_url, social_media_facebook, social_media_instagram, social_media_whatsapp, search_terms, ad_creation_time, potential_reach_max, potential_reach_min, created_at FROM "FacebookAd"
 WHERE page_id = $1

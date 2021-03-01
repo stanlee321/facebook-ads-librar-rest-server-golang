@@ -40,6 +40,7 @@ LIMIT $1
 OFFSET $2;
 
 
+
 -- name: ListFacebookAdsByPageID :many
 SELECT * FROM "FacebookAd"
 WHERE page_id = $1
