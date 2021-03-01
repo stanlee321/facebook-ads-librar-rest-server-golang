@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/stanlee321/facebook-ads-server/db/sqlc"
@@ -404,23 +403,18 @@ func (server *Server) createJob(ctx *gin.Context) {
 					}
 
 				} else {
-					if strings.Contains("pq: duplicate key value violates unique ", err.Error()) {
-						// Create Job To Facebook ad Map
-						argsJTF := db.CreateJobToFacebookAdParams{
-							JobID: sql.NullInt64{Int64: newJob.ID, Valid: true},
-							AdID:  sql.NullInt64{Int64: adID, Valid: true},
-						}
 
-						// Save in DB
-						_, err = server.store.CreateJobToFacebookAd(ctx, argsJTF)
+					// Create Job To Facebook ad Map
+					argsJTF := db.CreateJobToFacebookAdParams{
+						JobID: sql.NullInt64{Int64: newJob.ID, Valid: true},
+						AdID:  sql.NullInt64{Int64: adID, Valid: true},
+					}
 
-						// If error in save to db
-						if err != nil {
-							ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-							return
-						}
-					} else {
-						// Another kind of error
+					// Save in DB
+					_, err = server.store.CreateJobToFacebookAd(ctx, argsJTF)
+
+					// If error in save to db
+					if err != nil {
 						ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 						return
 					}
