@@ -64,8 +64,9 @@ This list all the cread jobs
 `GET`
 
 **URL PARAMS**
-`page_location: int`
-`page_size: int`
+
+* `page_location: int`
+* `page_size: int`
 
 **Example**
 `/api/facebook/jobs/list/all?page_location=1&page_size=10`
@@ -97,9 +98,7 @@ This list all the cread jobs
 
 ## Facebook Ads
 
-
-
-
+Once you have created Jobs, you can list Facebook ads.
 ### List all facebook ads.
 
 It uses pagination for show the acutal facebook ads.
@@ -113,8 +112,9 @@ It uses pagination for show the acutal facebook ads.
 `GET`
 
 **URL PARAMS**
-`page_location: int`
-`page_size: int`
+
+* `page_location: int`
+* `page_size: int`
 
 
 **RESPONSE**
@@ -208,14 +208,15 @@ It uses pagination for show the acutal facebook ads.
 `GET`
 
 **URL PARAMS**
-`page_location: int`
-`page_size: int`
-`job_id: int`
+
+* `page_location: int`
+* `page_size: int`
+* `job_id: int`
 
 
 **RESPONSE**
 
-A list of ads.
+A list of ads filtered by job_id
 
 ```json
 [
@@ -269,7 +270,8 @@ A list of ads.
 
 ## Indicators
 
-It uses pagination for show the acutal facebook ads.
+Once you have Jobs and Facebook ads, you can start using the `Indicators` from the Extraction, Transformation and Cleaning services.
+
 
 **URL**
 
@@ -280,7 +282,8 @@ It uses pagination for show the acutal facebook ads.
 `GET`
 
 **URL PARAMS**
-`job_id: int`
+
+* `job_id: int`
 
 **example**
 
@@ -289,13 +292,12 @@ Example with job_id = 1
 `/api/facebook/ads/etl/ind_a_b/1`
 
 
-
 **RESPONSE**
 
 Returns the fields:
-`job_id: int`,
-`ind_one_a: list({timestamp: string, count_punt: string }) `
-`ind_one_b: list({timestamp: string, count_punt: string }) `.
+* `job_id: int`,
+* `ind_one_a: list({timestamp: string, count_punt: string }) `
+* `ind_one_b: list({timestamp: string, count_punt: string }) `.
 
 
 ```json
